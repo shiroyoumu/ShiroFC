@@ -9,13 +9,14 @@ namespace EditorFC
 {
     public class DebugHelperWindow : EditorWindow
     {
-        [MenuItem("Human/Debug Helper Window", false, 2002)]
+        [MenuItem("Human/Auto Save Window", false, 2002)]
         static void Init()
         {
             saveMin = DateTime.Now.Minute;
             saveHour = DateTime.Now.Hour;
             DebugHelperWindow dhWindow = (DebugHelperWindow)EditorWindow.GetWindow(typeof(DebugHelperWindow));
             dhWindow.minSize = new Vector2(70, 18);
+            dhWindow.titleContent = new GUIContent("自动保存");
             dhWindow.Show();
         }
 
