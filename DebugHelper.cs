@@ -336,12 +336,39 @@ namespace DebugHelper
 		/// </summary>
 		void ToggleBulletTime()
 		{
-			if (Input.GetKeyUp(Key2Keycode(bulletTime)))
+			if (Input.GetKeyDown(Key2Keycode(bulletTime)))
+			{ 
 				isBullet = !isBullet;
-			if (isBullet)
-				Time.timeScale = bulletTimeScale;
-			else
-				Time.timeScale = 1f;
+				if (isBullet)
+				{
+					Time.timeScale = bulletTimeScale;
+					AudioSource[] audios = GetComponent<BuiltinLevel>().gameObject.GetComponentsInChildren<AudioSource>();
+					foreach (var item in audios)
+					{
+						item.pitch *= bulletTimeScale;
+					}
+					ParticleSystem[] pars = GetComponent<BuiltinLevel>().gameObject.GetComponentsInChildren<ParticleSystem>();
+                    foreach (var item in pars)
+                    {
+						item.playbackSpeed *= bulletTimeScale;
+					}
+				}
+
+				else
+				{ 
+					Time.timeScale = 1f;
+					AudioSource[] audios = GetComponent<BuiltinLevel>().gameObject.GetComponentsInChildren<AudioSource>();
+					foreach (var item in audios)
+					{
+						item.pitch /= bulletTimeScale;
+					}
+					ParticleSystem[] pars = GetComponent<BuiltinLevel>().gameObject.GetComponentsInChildren<ParticleSystem>();
+					foreach (var item in pars)
+					{
+						item.playbackSpeed /= bulletTimeScale;
+					}
+				}
+			}	
 		}
 
 		/// <summary>
