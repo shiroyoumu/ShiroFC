@@ -10,42 +10,8 @@ using System.Reflection;
 
 namespace DebugHelper
 {
-	///
-	/// Show Tips：是否显示提示信息。T：显示提示信息，F：不显示
-	/// Font Size：提示信息字体大小
-	/// Show Time：提示信息显示时间
-	/// Restart Checkpoint：重载存档点快捷键
-	/// Lock Cursor：锁定/解锁鼠标快捷键
-	/// Cursor Lock：鼠标锁定状态。T：锁定，F：未锁定
-	/// Drop Man：drop man快捷键（和Human菜单中的一样）
-	/// Temp save：建立临时保存点
-	/// Temp Load：移动至临时保存点
-	/// Respawn Or Teleport：重生、传送选择。T：正常重生，F：传送
-	/// Checkpoint Color：临时保存点颜色（仅Scene面板可见）
-	/// Checkpoint Size：临时保存点标识大小
-	/// Teleport：视野内瞬移快捷键
-	/// Fly Or Teleport：飞行、瞬移选择。T：飞行，F：瞬移
-	/// Target Plate Size：落点指示器大小
-	/// Target Plate Color：落点指示器颜色
-	/// FPS：切换视角快捷键
-	/// Net Info：显示场景网络信息快捷键  ---- 20200706
-	/// Debug Node：调试用节点（按下对应按键产生输出信号）
-	///		Trigger Key：输出快捷键
-	///		High Output：按下按键的输出值
-	///		Low Output：抬起按键的输出值
-	///		Trigger Mode：输出模式。T：不自锁按钮（press），F：自锁开关（toggle）  ---- 20200715
-	///	Show FPS：切换显示FPS及内存信息
-	///	Fps Refresh Rate：FPS刷新率
-	///	Show FPS：指示器当前显示状态
-	///	Fps Font Size：FPS指示器字体大小
-	///	Mem Font Size：内存指示器字体大小
-	///	Bullet Time：切换子弹时间
-	///	Bullet Time Scale：子弹时间变速
-	///	Max Game Window：最大化Game窗口
-	///	Editor Path：UnityEditor.dll文件路径  ---- 20220222
-	///
 	[DisallowMultipleComponent]
-	[AddComponentMenu("ShiroFC/Debug Helper 20220222")]
+	[AddComponentMenu("ShiroFC/Debug Helper 20220311")]
 	public class DH : MonoBehaviour
 	{
 		void Start()
@@ -65,12 +31,13 @@ namespace DebugHelper
 			tar.SetActive(false);       //隐藏
 			line.SetActive(false);
 			asm = Assembly.LoadFile(editorPath);
+			FindObj();
+			SetConscious();
 		}
 
 		void Update()
 		{
-			timer += Time.deltaTime;
-			FindObj();
+			//timer += Time.deltaTime;
 			RestartCP();
 			LockC();
 			DoDrop();
@@ -151,14 +118,14 @@ namespace DebugHelper
 		/// </summary>
 		void FindObj()
 		{
-			if (timer >= 1 && flag)
-			{
-				g = GameObject.Find("Game(Clone)").GetComponent<Game>();
-				h = GameObject.Find("Ball").GetComponent<Human>();
-				c = GameObject.Find("GameCamera(Clone)");
-				n = g.transform.Find("NetGame/Canvas");
-				flag = !flag;
-			}
+			//if (timer >= 1 && flag)
+			//{
+			g = GameObject.Find("Game(Clone)").GetComponent<Game>();
+			h = GameObject.Find("Ball").GetComponent<Human>();
+			c = GameObject.Find("GameCamera(Clone)");
+			n = g.transform.Find("NetGame/Canvas");
+			//	flag = !flag;
+			//}
 		}
 
 		/// <summary>
@@ -337,7 +304,7 @@ namespace DebugHelper
 		void ToggleBulletTime()
 		{
 			if (Input.GetKeyDown(Key2Keycode(bulletTime)))
-			{ 
+			{
 				isBullet = !isBullet;
 				if (isBullet)
 				{
@@ -348,14 +315,14 @@ namespace DebugHelper
 						item.pitch *= bulletTimeScale;
 					}
 					ParticleSystem[] pars = GetComponent<BuiltinLevel>().gameObject.GetComponentsInChildren<ParticleSystem>();
-                    foreach (var item in pars)
-                    {
+					foreach (var item in pars)
+					{
 						item.playbackSpeed *= bulletTimeScale;
 					}
 				}
 
 				else
-				{ 
+				{
 					Time.timeScale = 1f;
 					AudioSource[] audios = GetComponent<BuiltinLevel>().gameObject.GetComponentsInChildren<AudioSource>();
 					foreach (var item in audios)
@@ -368,7 +335,7 @@ namespace DebugHelper
 						item.playbackSpeed /= bulletTimeScale;
 					}
 				}
-			}	
+			}
 		}
 
 		/// <summary>
@@ -376,7 +343,7 @@ namespace DebugHelper
 		/// </summary>
 		void getSpeed()
 		{
-			if (!flag && h.state != HumanState.Spawning)
+			if (h.state != HumanState.Spawning)
 			{
 				if (showSpeed && !isFlying)
 				{
@@ -401,7 +368,7 @@ namespace DebugHelper
 		/// </summary>
 		void getAveSpeed()
 		{
-			if (!flag && h.state != HumanState.Spawning)
+			if (h.state != HumanState.Spawning)
 			{
 				if (showSpeed && !isFlying)
 				{
@@ -411,22 +378,29 @@ namespace DebugHelper
 			}
 		}
 
-		void MaxGameWin() {
+		void MaxGameWin()
+		{
 			if (Input.GetKeyDown(Key2Keycode(maxGameWindow)))
 			{
 				try
 				{
 					Type t1 = asm.GetType("UnityEditor.GameView");
-					//ConstructorInfo t1Constructor = t1.GetConstructor(Type.EmptyTypes);
-					//System.Object oPubClass = t1Constructor.Invoke(new System.Object[] { });
-					//MethodInfo oMethod = t1.GetMethod("ABC", BindingFlags.Instance | BindingFlags.NonPublic);
-					//oMethod.Invoke(oPubClass, new System.Object[] { });
 					EditorWindow win = EditorWindow.GetWindow(t1);
 					win.maximized = !win.maximized;
 				}
 				catch (NullReferenceException)
 				{ Debug.LogError("文件未找到，请检查文件路径并重新运行！"); }
 			}
+		}
+
+		void SetConscious()
+		{
+			Type t = h.GetType();
+			FieldInfo fInfo = t.GetField("maxUnconsciousTime", BindingFlags.NonPublic | BindingFlags.Instance);
+			if (!isUnconscious)
+				fInfo.SetValue(h, 0f);
+			else
+				fInfo.SetValue(h, 3f);
 		}
 
 		/// <summary>
@@ -498,9 +472,9 @@ namespace DebugHelper
 		GameObject tar;     //落点指示器
 		GameObject line;    //连接线
 		Transform n;        //网络信息
-		float timer;    //总计时器
-		bool flag = true;      //寻找标志
-		//////////////////////////////////////////////////////////////////////
+							//float timer;    //总计时器
+							//bool flag = true;      //寻找标志
+							//////////////////////////////////////////////////////////////////////
 		[Tooltip("显示提示信息")]
 		public bool showTips = true;
 		[Tooltip("提示字体大小")]
@@ -519,7 +493,7 @@ namespace DebugHelper
 		public Key lockCursor = Key.Tab;
 		[Tooltip("当前鼠标状态：T：锁定；F：解锁")]
 		public bool cursorLock = true;     //鼠标锁定标志
-		//////////////////////////////////////////////////////////////////////
+										   //////////////////////////////////////////////////////////////////////
 		[Tooltip("放人快捷键")]
 		public Key dropMan = Key.Q;
 		//////////////////////////////////////////////////////////////////////
@@ -580,11 +554,14 @@ namespace DebugHelper
 		float accumSpeed;   //累积速度
 		float maxSpd;   //最大速度
 		double distance;    //跳跃距离
-		//////////////////////////////////////////////////////////////////////
+							//////////////////////////////////////////////////////////////////////
 		[Tooltip("最大化Game面板快捷键")]
 		public Key maxGameWindow = Key.M;
 		Assembly asm;
 		public string editorPath = @"X:\BBBYYYMMM\Unity2017.4.13f1\Editor\Data\Managed\UnityEditor.dll";
+		/////////////////////////////////////////////////////////////////////
+		[Tooltip("是否落地眩晕")]
+		public bool isUnconscious = false;
 
 
 		public enum Key
@@ -651,5 +628,3 @@ namespace DebugHelper
 		}
 	}
 }
-
-
