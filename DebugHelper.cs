@@ -5,13 +5,12 @@ using HumanAPI;
 using UnityEditor;
 using System;
 using Multiplayer;
-using UnityEngine.Profiling;
 using System.Reflection;
 
 namespace DebugHelper
 {
 	[DisallowMultipleComponent]
-	[AddComponentMenu("ShiroFC/Debug Helper 20220311")]
+	[AddComponentMenu("ShiroFC/Debug Helper 20220312")]
 	public class DH : MonoBehaviour
 	{
 		void Start()
@@ -49,6 +48,7 @@ namespace DebugHelper
 			ToggleBulletTime();
 			getSpeed();
 			MaxGameWin();
+			DoDropPre();
 		}
 
 		void FixedUpdate()
@@ -165,11 +165,21 @@ namespace DebugHelper
 		void DoDrop()
 		{
 			if (Input.GetKeyDown(Key2Keycode(dropMan)))
+			{
 				if (Application.isPlaying && SceneView.lastActiveSceneView != null && SceneView.lastActiveSceneView.camera != null)
-				{
-					Transform transform = SceneView.lastActiveSceneView.camera.transform;
-					Human.instance.gameObject.transform.position = transform.TransformPoint(new Vector3(0f, 0f, 2f));
-				}
+					sceneCam = SceneView.lastActiveSceneView.camera.transform.position;
+				if (sceneCam != new Vector3(0, 0, 0))
+					Human.instance.gameObject.transform.position = sceneCam;
+			}
+		}
+
+		/// <summary>
+		/// 放人位置预获取
+		/// </summary>
+		void DoDropPre()
+		{
+			if (SceneView.lastActiveSceneView != null && SceneView.lastActiveSceneView.camera != null)
+				sceneCam = SceneView.lastActiveSceneView.camera.transform.position;
 		}
 
 		/// <summary>
@@ -348,14 +358,12 @@ namespace DebugHelper
 				if (showSpeed && !isFlying)
 				{
 					spd = h.velocity.magnitude; //计算速度
-												/////////////////////////////////
 					if (Input.GetKeyDown(Key2Keycode(speedClear)))//清除数据
 					{
 						aveTick = 0;
 						accumSpeed = 0;
 						maxSpd = 0;
 					}
-					///////////////////////////////////
 					if (spd > maxSpd)   //设置最大速度
 						maxSpd = spd;
 					distance = Mathf.Sqrt(h.velocity.x * h.velocity.x + h.velocity.z * h.velocity.z) * 0.75;    //计算跳跃距离
@@ -472,10 +480,10 @@ namespace DebugHelper
 		GameObject tar;     //落点指示器
 		GameObject line;    //连接线
 		Transform n;        //网络信息
-							//float timer;    //总计时器
-							//bool flag = true;      //寻找标志
-							//////////////////////////////////////////////////////////////////////
-		[Tooltip("显示提示信息")]
+        //float timer;    //总计时器
+        //bool flag = true;      //寻找标志
+        /*===================================================================*/
+        [Tooltip("显示提示信息")]
 		public bool showTips = true;
 		[Tooltip("提示字体大小")]
 		[Range(20, 80)]
@@ -485,18 +493,19 @@ namespace DebugHelper
 		public float showTime = 3;      //提示显示时间
 		float curTime = 0;
 		Tips tips = Tips.None;
-		//////////////////////////////////////////////////////////////////////
+		/*===================================================================*/
 		[Tooltip("重载存档点快捷键")]
 		public Key restartCheckpoint = Key.R;
-		//////////////////////////////////////////////////////////////////////
+		/*===================================================================*/
 		[Tooltip("锁定/解锁鼠标快捷键")]
 		public Key lockCursor = Key.Tab;
 		[Tooltip("当前鼠标状态：T：锁定；F：解锁")]
 		public bool cursorLock = true;     //鼠标锁定标志
-										   //////////////////////////////////////////////////////////////////////
+		/*===================================================================*/
 		[Tooltip("放人快捷键")]
 		public Key dropMan = Key.Q;
-		//////////////////////////////////////////////////////////////////////
+		Vector3 sceneCam;
+		/*===================================================================*/
 		[Tooltip("临时保存快捷键")]
 		public Key tempSave = Key.Num3;
 		[Tooltip("临时读取快捷键")]
@@ -510,7 +519,7 @@ namespace DebugHelper
 		[Tooltip("保存点大小")]
 		[Range(0, 3)]
 		public float checkpointSize = 1;
-		//////////////////////////////////////////////////////////////////////
+		/*===================================================================*/
 		[Tooltip("传送快捷键")]
 		public Key teleport = Key.F;
 		RaycastHit hit;
@@ -525,20 +534,20 @@ namespace DebugHelper
 		[Tooltip("落点指示器颜色")]
 		public Color targetPlateColor = Color.red;
 		GUIStyle fontStyle = new GUIStyle();
-		//////////////////////////////////////////////////////////////////////
+		/*===================================================================*/
 		[Tooltip("第一、第三人称切换快捷键")]
 		public Key fps = Key.V;
-		//////////////////////////////////////////////////////////////////////
+		/*===================================================================*/
 		[Tooltip("显示网络信息快捷键")]
 		public Key netInfo = Key.F2;
-		//////////////////////////////////////////////////////////////////////
+		/*===================================================================*/
 		[Tooltip("子弹时间快捷键")]
 		public Key bulletTime = Key.B;
 		bool isBullet = false;
 		[Tooltip("子弹时间速度")]
 		[Range(0, 2)]
 		public float bulletTimeScale = 0.5f;
-		//////////////////////////////////////////////////////////////////////
+		/*===================================================================*/
 		[Tooltip("是否开启速度显示")]
 		public bool showSpeed = true;
 		[Tooltip("速度显示清零")]
@@ -554,15 +563,14 @@ namespace DebugHelper
 		float accumSpeed;   //累积速度
 		float maxSpd;   //最大速度
 		double distance;    //跳跃距离
-							//////////////////////////////////////////////////////////////////////
+		/*===================================================================*/
 		[Tooltip("最大化Game面板快捷键")]
 		public Key maxGameWindow = Key.M;
 		Assembly asm;
 		public string editorPath = @"X:\BBBYYYMMM\Unity2017.4.13f1\Editor\Data\Managed\UnityEditor.dll";
-		/////////////////////////////////////////////////////////////////////
+		/*===================================================================*/
 		[Tooltip("是否落地眩晕")]
 		public bool isUnconscious = false;
-
 
 		public enum Key
 		{
