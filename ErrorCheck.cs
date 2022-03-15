@@ -23,19 +23,27 @@ namespace EditorFC
 			win.Show();
 		}
 
+		void OnEnable()
+		{
+			getLevelObj();
+		}
+
 		void OnGUI()
 		{
 			GUILayout.Space(5);
 			ifCkRigid = EditorGUILayout.Toggle("检查刚体Net body", ifCkRigid);
 			ifCkSignal = EditorGUILayout.Toggle("检查事件前Net Signal", ifCkSignal);
 			GUILayout.Space(5);
-			if (GUILayout.Button("检    查", new GUILayoutOption[0]))
+			if (GUILayout.Button("为所有刚体添加Net Body", new GUILayoutOption[0]) && level)
+				AddAllNetBody();
+			GUILayout.Space(5);
+			if (GUILayout.Button("检    查", new GUILayoutOption[0]) && level)
 				CheckNetError();
 			GUILayout.Label("________________________________________________");
 			GUILayout.Space(5);
 			GUILayout.Label("问题报告");
 			GUILayout.Space(5);
-			scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Width(345), GUILayout.Height(400));
+			scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Width(345), GUILayout.Height(390));
 			if (ErrItemList != null)
 			{
 				foreach (var item in ErrItemList)
@@ -52,6 +60,27 @@ namespace EditorFC
 		}
 
 		/// <summary>
+		/// 为所有刚体添加Net Body
+		/// </summary>
+		public void AddAllNetBody()
+		{
+			Rigidbody[] r = level.GetComponentsInChildren<Rigidbody>();
+			int i = 0;
+            foreach (var item in r)
+            {
+				if (!item.GetComponent<NetBody>())
+				{ 
+					item.gameObject.AddComponent<NetBody>();
+					i++;
+				}	
+            }
+			if (i == 0)
+				UniLog = "没有刚体需要添加Net Body"; 
+			else
+				UniLog = String.Format("已为 {0} 个刚体添加Net Body", i);
+		}
+
+		/// <summary>
 		/// 检查网络错误
 		/// </summary>
 		public void CheckNetError()
@@ -59,17 +88,6 @@ namespace EditorFC
 			//清空数据
 			ErrItemList = new List<ErrItem>();
 			nRigid = nSignal = 0;
-			//找Level
-			try
-			{
-				ErrorCheckWindow.level = GameObject.FindGameObjectWithTag("Level");
-				BuiltinLevel level = ErrorCheckWindow.level.GetComponent<BuiltinLevel>();
-			}
-			catch (NullReferenceException)
-			{
-				UniLog = "Level物体未找到！";
-				return;
-			}
 			//根据要求检错
 			if (ifCkRigid)
 			{
@@ -94,6 +112,23 @@ namespace EditorFC
 			else
 			{
 				UniLog = "未检测到网络信号同步问题";
+			}
+		}
+
+		/// <summary>
+		/// 找Level物体
+		/// </summary>
+		void getLevelObj() 
+		{
+			try
+			{
+				ErrorCheckWindow.level = GameObject.FindGameObjectWithTag("Level");
+				BuiltinLevel level = ErrorCheckWindow.level.GetComponent<BuiltinLevel>();
+			}
+			catch (NullReferenceException)
+			{
+				UniLog = "Level物体未找到！";
+				return;
 			}
 		}
 
