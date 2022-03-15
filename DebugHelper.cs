@@ -11,11 +11,7 @@ using System.Reflection;
 namespace DebugHelper
 {
 	[DisallowMultipleComponent]
-<<<<<<< HEAD
 	[AddComponentMenu("ShiroFC/Debug Helper 20220315")]
-=======
-	[AddComponentMenu("ShiroFC/Debug Helper 20220311")]
->>>>>>> parent of c12eccd (2022.03.12)
 	public class DH : MonoBehaviour
 	{
 		void Start()
