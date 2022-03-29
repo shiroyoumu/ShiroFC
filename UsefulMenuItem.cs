@@ -79,7 +79,59 @@ namespace EditorFC
                 Debug.Log("\"" + Selection.activeGameObject.name + "\" add label trigger ready!");
             }
         }
-        
-    }
 
+        [MenuItem("GameObject/Add Human Component/Add Linear Motor", false, 2000)]
+        public static void AddLinearMotor()
+        {
+            GameObject go = Selection.activeGameObject;
+            if (go != null)
+            {
+                GameObject axis = new GameObject("motor");
+                axis.transform.parent = go.transform;
+                axis.transform.localPosition = Vector3.zero;
+                LinearJoint lj = axis.AddComponent<LinearJoint>();
+                lj.minValue = 0;
+                lj.maxValue = 5;
+                lj.body = go.transform;
+                lj.axis = axis.transform;
+                ServoMotor sm = axis.AddComponent<ServoMotor>();
+                sm.joint = lj;
+                sm.power.initialValue = 1;
+                if (!go.GetComponent<Rigidbody>())
+                    go.AddComponent<Rigidbody>().isKinematic = true;
+                else
+                    go.GetComponent<Rigidbody>().isKinematic = true;
+                if (!go.GetComponent<NetBody>())
+                    go.AddComponent<NetBody>();
+                Debug.Log("\"" + Selection.activeGameObject.name + "\" add linear motor ready!");
+            }
+        }
+
+        [MenuItem("GameObject/Add Human Component/Add Angular Motor", false, 2000)]
+        public static void AddAngularMotor()
+        {
+            GameObject go = Selection.activeGameObject;
+            if (go != null)
+            {
+                GameObject axis = new GameObject("motor");
+                axis.transform.parent = go.transform;
+                axis.transform.localPosition = Vector3.zero;
+                AngularJoint lj = axis.AddComponent<AngularJoint>();
+                lj.minValue = 0;
+                lj.maxValue = 90;
+                lj.body = go.transform;
+                lj.axis = axis.transform;
+                ServoMotor sm = axis.AddComponent<ServoMotor>();
+                sm.joint = lj;
+                sm.power.initialValue = 1;
+                if (!go.GetComponent<Rigidbody>())
+                    go.AddComponent<Rigidbody>().isKinematic = true;
+                else
+                    go.GetComponent<Rigidbody>().isKinematic = true;
+                if (!go.GetComponent<NetBody>())
+                    go.AddComponent<NetBody>();
+                Debug.Log("\"" + Selection.activeGameObject.name + "\" add linear motor ready!");
+            }
+        }
+    }
 }
