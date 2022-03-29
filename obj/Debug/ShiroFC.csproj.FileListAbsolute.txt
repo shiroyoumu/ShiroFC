@@ -10,7 +10,7 @@ Z:\1human\shirosMap2\Assets\0bym_uni\Scripts\ShiroFC.dll
 Z:\1human\shirosMap2\Assets\0bym_uni\Scripts\ShiroFC.pdb
 Z:\1人类相关\1.dll\ShiroFC\obj\Debug\ShiroFC.csproj.AssemblyReference.cache
 Z:\1人类相关\1.dll\ShiroFC\obj\Debug\ShiroFC.csproj.CoreCompileInputs.cache
-Z:\1人类相关\1.dll\ShiroFC\obj\Debug\ShiroFC.dll
-Z:\1人类相关\1.dll\ShiroFC\obj\Debug\ShiroFC.pdb
 Z:\1人类相关\1.dll\ShiroFC\bin\Debug\ShiroFC.dll
 Z:\1人类相关\1.dll\ShiroFC\bin\Debug\ShiroFC.pdb
+Z:\1人类相关\1.dll\ShiroFC\obj\Debug\ShiroFC.dll
+Z:\1人类相关\1.dll\ShiroFC\obj\Debug\ShiroFC.pdb

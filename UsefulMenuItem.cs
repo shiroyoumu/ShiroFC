@@ -22,7 +22,7 @@ namespace EditorFC
                     go.AddComponent<NetBody>();
                 if (!go.GetComponent<CollisionAudioSensor>())
                     go.AddComponent<CollisionAudioSensor>();
-                Debug.Log("\"" + Selection.activeGameObject.name + "\" add rigid ready!");
+                Debug.Log("\"" + Selection.activeGameObject.name + "\" add rigid done!");
             }
         }
 
@@ -54,7 +54,7 @@ namespace EditorFC
                 go.AddComponent<TriggerVolume>().pos = new Vector2(32, 128);
                 go.AddComponent<NetSignal>().pos = new Vector2(224, 128);
                 go.AddComponent<SignalUnityEvent>().pos = new Vector2(448, 128);
-                Debug.Log("\"" + Selection.activeGameObject.name + "\" add trigger ready!");
+                Debug.Log("\"" + Selection.activeGameObject.name + "\" add trigger done!");
             }
         }
 
@@ -76,7 +76,7 @@ namespace EditorFC
                 go.AddComponent<ColliderLabelTriggerVolume>().pos = new Vector2(32, 128);
                 go.AddComponent<NetSignal>().pos = new Vector2(224, 128);
                 go.AddComponent<SignalUnityEvent>().pos = new Vector2(448, 128);
-                Debug.Log("\"" + Selection.activeGameObject.name + "\" add label trigger ready!");
+                Debug.Log("\"" + Selection.activeGameObject.name + "\" add label trigger done!");
             }
         }
 
@@ -103,7 +103,7 @@ namespace EditorFC
                     go.GetComponent<Rigidbody>().isKinematic = true;
                 if (!go.GetComponent<NetBody>())
                     go.AddComponent<NetBody>();
-                Debug.Log("\"" + Selection.activeGameObject.name + "\" add linear motor ready!");
+                Debug.Log("\"" + Selection.activeGameObject.name + "\" add linear motor done!");
             }
         }
 
@@ -130,7 +130,7 @@ namespace EditorFC
                     go.GetComponent<Rigidbody>().isKinematic = true;
                 if (!go.GetComponent<NetBody>())
                     go.AddComponent<NetBody>();
-                Debug.Log("\"" + Selection.activeGameObject.name + "\" add linear motor ready!");
+                Debug.Log("\"" + Selection.activeGameObject.name + "\" add angular motor done!");
             }
         }
     }

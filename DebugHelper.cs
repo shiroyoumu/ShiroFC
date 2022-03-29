@@ -24,9 +24,11 @@ namespace DebugHelper
 			GameObject.Destroy(line.GetComponent<BoxCollider>());
 			tar.transform.localScale = new Vector3(5, 5, 0.2f) * targetPlateSize;   //设置大小
 			line.transform.localScale = new Vector3(0.2f, 0.2f, 1);
-			m = new Material(Shader.Find("Standard"));      //创建材质
-			m.color = targetPlateColor;
-			tar.GetComponent<Renderer>().material = m;      //设置材质
+            m = new Material(Shader.Find("Standard"))		//创建材质
+            {
+                color = targetPlateColor
+            };      
+            tar.GetComponent<Renderer>().material = m;      //设置材质
 			line.GetComponent<Renderer>().material = m;
 			tar.SetActive(false);       //隐藏
 			line.SetActive(false);
@@ -47,13 +49,13 @@ namespace DebugHelper
 			ToggleFps();
 			ShowNetInfo();
 			ToggleBulletTime();
-			getSpeed();
+			GetSpeed();
 			MaxGameWin();
 		}
 
 		void FixedUpdate()
 		{
-			getAveSpeed();
+			GetAveSpeed();
 		}
 
 		void OnGUI()
@@ -66,11 +68,11 @@ namespace DebugHelper
 				{
 					switch (tips)
 					{
-						case Tips.RCP: displayText("已重载保存点", fontStyle); break;
-						case Tips.TCP_save: displayText("已保存当前位置", fontStyle); break;
-						case Tips.TCP_load: displayText("已回到保存的位置", fontStyle); break;
-						case Tips.TP_notar: displayText("无目标", fontStyle); break;
-						case Tips.None: displayText("", fontStyle); break;
+						case Tips.RCP: DisplayText("已重载保存点", fontStyle); break;
+						case Tips.TCP_save: DisplayText("已保存当前位置", fontStyle); break;
+						case Tips.TCP_load: DisplayText("已回到保存的位置", fontStyle); break;
+						case Tips.TP_notar: DisplayText("无目标", fontStyle); break;
+						case Tips.None: DisplayText("", fontStyle); break;
 					}
 				}
 				else      //没提示不显示
@@ -103,12 +105,12 @@ namespace DebugHelper
 		/// </summary>
 		/// <param name="text">显示的内容</param>
 		/// <param name="fontStyle">样式</param>
-		void displayText(string text, GUIStyle fontStyle)
+		void DisplayText(string text, GUIStyle fontStyle)
 		{
 			if (curTime <= 0)
 				curTime = showTime;     //显示时间
 			GUI.Label(new Rect(40, 40, 200, 200), text, fontStyle);
-			curTime = curTime - Time.deltaTime;
+			curTime -= Time.deltaTime;
 			if (curTime <= 0)
 				tips = Tips.None;
 		}
@@ -341,7 +343,7 @@ namespace DebugHelper
 		/// <summary>
 		/// 显示人物速度
 		/// </summary>
-		void getSpeed()
+		void GetSpeed()
 		{
 			if (h.state != HumanState.Spawning)
 			{
@@ -366,7 +368,7 @@ namespace DebugHelper
 		/// <summary>
 		/// 显示平均速度
 		/// </summary>
-		void getAveSpeed()
+		void GetAveSpeed()
 		{
 			if (h.state != HumanState.Spawning)
 			{
