@@ -51,9 +51,7 @@ namespace EditorFC
                 MeshRenderer mr = go.GetComponent<MeshRenderer>();
                 if (mr)
                     mr.enabled = false;
-                go.AddComponent<TriggerVolume>().pos = new Vector2(32, 128);
-                go.AddComponent<NetSignal>().pos = new Vector2(224, 128);
-                go.AddComponent<SignalUnityEvent>().pos = new Vector2(448, 128);
+                go.AddComponent<TriggerVolume>();
                 Debug.Log("\"" + Selection.activeGameObject.name + "\" add trigger done!");
             }
         }
@@ -73,9 +71,7 @@ namespace EditorFC
                 MeshRenderer mr = go.GetComponent<MeshRenderer>();
                 if (mr)
                     mr.enabled = false;
-                go.AddComponent<ColliderLabelTriggerVolume>().pos = new Vector2(32, 128);
-                go.AddComponent<NetSignal>().pos = new Vector2(224, 128);
-                go.AddComponent<SignalUnityEvent>().pos = new Vector2(448, 128);
+                go.AddComponent<ColliderLabelTriggerVolume>();
                 Debug.Log("\"" + Selection.activeGameObject.name + "\" add label trigger done!");
             }
         }
@@ -131,6 +127,49 @@ namespace EditorFC
                 if (!go.GetComponent<NetBody>())
                     go.AddComponent<NetBody>();
                 Debug.Log("\"" + Selection.activeGameObject.name + "\" add angular motor done!");
+            }
+        }
+        [MenuItem("GameObject/Add Human Component/Add Fall Trigger", false, 2000)]
+        public static void AddFallTrigger()
+        {
+            GameObject go = Selection.activeGameObject;
+            if (go != null)
+            {
+                Collider c = go.GetComponent<Collider>();
+                if (c)
+                    c.isTrigger = true;
+                else
+                    go.AddComponent<BoxCollider>().isTrigger = true;
+                go.layer = 10;
+                MeshRenderer mr = go.GetComponent<MeshRenderer>();
+                if (mr)
+                    mr.enabled = false;
+                go.AddComponent<FallTrigger>();
+                Debug.Log("\"" + Selection.activeGameObject.name + "\" add fall trigger done!");
+            }
+        }
+        [MenuItem("GameObject/Add Human Component/Add Checkpoint", false, 2000)]
+        public static void AddCheckpoint()
+        {
+            GameObject go = Selection.activeGameObject;
+            if (go != null)
+            {
+                Collider c = go.GetComponent<Collider>();
+                if (c)
+                    c.isTrigger = true;
+                else
+                    go.AddComponent<BoxCollider>().isTrigger = true;
+                go.layer = 10;
+                MeshRenderer mr = go.GetComponent<MeshRenderer>();
+                if (mr)
+                    mr.enabled = false;
+                Checkpoint[] cks = FindObjectsOfType<Checkpoint>();
+                List<int> num = new List<int>();
+                foreach (var item in cks)
+                    num.Add(item.number);
+                num.Sort();//从小到大
+                go.AddComponent<Checkpoint>().number = num[num.Count - 1] + 1;
+                Debug.Log("\"" + Selection.activeGameObject.name + "\" add checkpoint done!");
             }
         }
     }

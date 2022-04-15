@@ -41,10 +41,6 @@
       <HintPath>libs\HFF-Code-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="HumanAPI">
-      <HintPath>libs\HumanAPI.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="UnityEditor">
       <HintPath>libs\UnityEditor.dll</HintPath>
