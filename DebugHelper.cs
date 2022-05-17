@@ -56,6 +56,7 @@ namespace DebugHelper
             ToggleBulletTime();
             GetSpeed();
             MaxGameWin();
+            GetSceneCamPos();
         }
 
         void FixedUpdate()
@@ -89,7 +90,7 @@ namespace DebugHelper
         /// </summary>
         void SetSubtitle()
         {
-            SubtitleManager.instance.subtitleText.autoSizeTextContainer = false;
+            SubtitleManager.instance.subtitleText.enableAutoSizing = false;
             SubtitleManager.instance.subtitleText.color = Color.white;
             SubtitleManager.instance.subtitleText.fontSize = tipsFontSize;
         }
@@ -103,6 +104,17 @@ namespace DebugHelper
             h = GameObject.Find("Ball").GetComponent<Human>();
             c = GameObject.Find("GameCamera(Clone)");
             n = g.transform.Find("NetGame/Canvas");
+        }
+
+        /// <summary>
+        /// 获取场景摄像机位置
+        /// </summary>
+        void GetSceneCamPos()
+        {
+            if (SceneView.lastActiveSceneView != null && SceneView.lastActiveSceneView.camera != null)
+            {
+                dropManPos = SceneView.lastActiveSceneView.camera.transform.position;
+            }
         }
 
         /// <summary>
@@ -142,12 +154,19 @@ namespace DebugHelper
         /// </summary>
         void DoDrop()
         {
-            if (Input.GetKeyDown(Key2Keycode(dropMan)))
-                if (Application.isPlaying && SceneView.lastActiveSceneView != null && SceneView.lastActiveSceneView.camera != null)
+            if (Input.GetKeyDown(Key2Keycode(dropMan)) && Application.isPlaying)
+            {
+                try
                 {
-                    Transform transform = SceneView.lastActiveSceneView.camera.transform;
+                    Transform transform = GameObject.Find("FreeRoamCamera/GameCamera(Clone)").transform;
                     Human.instance.gameObject.transform.position = transform.TransformPoint(new Vector3(0f, 0f, 2f));
                 }
+                catch (NullReferenceException)
+                {
+                    if (dropManPos != Vector3.zero)
+                        Human.instance.gameObject.transform.position = dropManPos + new Vector3(0f, 0f, 2f);
+                }
+            }
         }
 
         /// <summary>
@@ -489,6 +508,7 @@ namespace DebugHelper
         //////////////////////////////////////////////////////////////////////
         [Tooltip("放人快捷键")]
         public Key dropMan = Key.Q;
+        public Vector3 dropManPos;
         //////////////////////////////////////////////////////////////////////
         [Tooltip("临时保存快捷键")]
         public Key tempSave = Key.Num3;
