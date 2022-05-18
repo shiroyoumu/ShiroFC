@@ -159,12 +159,12 @@ namespace DebugHelper
                 try
                 {
                     Transform transform = GameObject.Find("FreeRoamCamera/GameCamera(Clone)").transform;
-                    Human.instance.gameObject.transform.position = transform.TransformPoint(new Vector3(0f, 0f, 2f));
+                    h.transform.position = transform.TransformPoint(new Vector3(0f, 0f, 2f));
                 }
                 catch (NullReferenceException)
                 {
                     if (dropManPos != Vector3.zero)
-                        Human.instance.gameObject.transform.position = dropManPos + new Vector3(0f, 0f, 2f);
+                        h.transform.position = dropManPos + new Vector3(0f, 0f, 2f);
                 }
             }
         }
