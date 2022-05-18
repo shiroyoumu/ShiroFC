@@ -515,6 +515,10 @@ namespace DebugHelper
             if (Input.GetKeyDown(Key2Keycode(focusPlayer)))     //切换显示模式
             {
                 isFocus = !isFocus;
+                if (isFocus)
+                    SubtitleManager.instance.SetSubtitle("聚焦模式", showTime);
+                else
+                    SubtitleManager.instance.SetSubtitle("总览模式", showTime);
                 SetPlayerCamera();
             }
         }
