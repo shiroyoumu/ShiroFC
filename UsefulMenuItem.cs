@@ -172,5 +172,17 @@ namespace EditorFC
                 Debug.Log("\"" + Selection.activeGameObject.name + "\" add checkpoint done!");
             }
         }
+        [MenuItem("GameObject/Snap to Grid %q", false, -1)]
+        public static void Snap2Grid()
+        {
+            GameObject go = Selection.activeGameObject;
+            if (go != null)
+            {
+                float x = Mathf.Round(go.transform.position.x);
+                float y = Mathf.Round(go.transform.position.y);
+                float z = Mathf.Round(go.transform.position.z);
+                go.transform.position = new Vector3(x, y, z);
+            }
+        }
     }
 }

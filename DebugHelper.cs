@@ -5,13 +5,12 @@ using HumanAPI;
 using UnityEditor;
 using System;
 using Multiplayer;
-using UnityEngine.Profiling;
 using System.Reflection;
 
 namespace DebugHelper
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("ShiroFC/Debug Helper 20220517")]
+    [AddComponentMenu("ShiroFC/Debug Helper 20220518")]
     public class DH : MonoBehaviour
     {
         void Start()
@@ -57,6 +56,7 @@ namespace DebugHelper
             GetSpeed();
             MaxGameWin();
             GetSceneCamPos();
+            PlayerOperation();
         }
 
         void FixedUpdate()
@@ -101,8 +101,8 @@ namespace DebugHelper
         void FindObj()
         {
             g = GameObject.Find("Game(Clone)").GetComponent<Game>();
-            h = GameObject.Find("Ball").GetComponent<Human>();
-            c = GameObject.Find("GameCamera(Clone)");
+            h = NetGame.instance.players[0].GetComponentInChildren<Human>();
+            c = NetGame.instance.players[0].GetComponentInChildren<Camera>();
             n = g.transform.Find("NetGame/Canvas");
         }
 
@@ -345,14 +345,12 @@ namespace DebugHelper
                 if (showSpeed && !isFlying)
                 {
                     spd = h.velocity.magnitude; //计算速度
-                                                /////////////////////////////////
                     if (Input.GetKeyDown(Key2Keycode(speedClear)))//清除数据
                     {
                         aveTick = 0;
                         accumSpeed = 0;
                         maxSpd = 0;
                     }
-                    ///////////////////////////////////
                     if (spd > maxSpd)   //设置最大速度
                         maxSpd = spd;
                     distance = Mathf.Sqrt(h.velocity.x * h.velocity.x + h.velocity.z * h.velocity.z) * 0.75;    //计算跳跃距离
@@ -404,6 +402,121 @@ namespace DebugHelper
                 fInfo.SetValue(h, 0f);
             else
                 fInfo.SetValue(h, 3f);
+        }
+
+        /// <summary>
+        /// 设置玩家控制
+        /// </summary>
+        void SetPlayerControl()
+        {
+            for (int i = 0; i < NetGame.instance.players.Count; i++)
+            {
+                if (i == curPlayer) //选择当前玩家
+                {
+                    NetGame.instance.players[i].isLocalPlayer = true;   //启用控制
+                    h = NetGame.instance.players[i].GetComponentInChildren<Human>();    //获取Human、Camera引用
+                    c = NetGame.instance.players[i].GetComponentInChildren<Camera>();
+                    Destroy(FindObjectOfType<AudioListener>());     //删除音频接收器
+                    h.GetComponentInChildren<HumanHead>().gameObject.AddComponent<AudioListener>();     //重新在当前玩家头上添加音频接收器
+                }
+                else
+                {
+                    NetGame.instance.players[i].isLocalPlayer = false;
+                }
+            }
+            if (NetGame.instance.players.Count > 1)
+                SubtitleManager.instance.SetInstruction(String.Format("正在控制 {0}P", curPlayer + 1));
+            else
+                SubtitleManager.instance.ClearInstruction();
+        }
+
+        /// <summary>
+        /// 设置玩家摄像机
+        /// </summary>
+        void SetPlayerCamera()
+        {
+            if (isFocus)    //处在聚焦模式下
+            {
+                for (int i = 0; i < NetGame.instance.players.Count; i++)
+                {
+                    if (i == curPlayer)
+                    {
+                        NetGame.instance.players[i].GetComponentInChildren<Camera>().rect = new Rect(0, 0, 1, 1);   //全屏显示当前玩家摄像机
+                        NetGame.instance.players[i].GetComponentInChildren<Camera>().depth = -0.01f;
+                    }
+                    else
+                        NetGame.instance.players[i].GetComponentInChildren<Camera>().depth = -0.1f;
+                }
+            }
+            else   //处在总览模式下
+            {
+                int n = NetGame.instance.players.Count;
+                switch (n)  //分屏
+                {
+                    case 1:
+                        NetGame.instance.players[0].GetComponentInChildren<Camera>().rect = new Rect(0, 0, 1, 1); break;
+                    case 2:
+                        NetGame.instance.players[0].GetComponentInChildren<Camera>().rect = new Rect(0, 0, 0.5f, 1);
+                        NetGame.instance.players[1].GetComponentInChildren<Camera>().rect = new Rect(0.5f, 0, 0.5f, 1); break;
+                    case 3:
+                        NetGame.instance.players[0].GetComponentInChildren<Camera>().rect = new Rect(0, 0.5f, 0.5f, 0.5f);
+                        NetGame.instance.players[1].GetComponentInChildren<Camera>().rect = new Rect(0.5f, 0.5f, 0.5f, 0.5f);
+                        NetGame.instance.players[2].GetComponentInChildren<Camera>().rect = new Rect(0, 0, 0.5f, 0.5f); break;
+                    case 4:
+                        NetGame.instance.players[0].GetComponentInChildren<Camera>().rect = new Rect(0, 0.5f, 0.5f, 0.5f);
+                        NetGame.instance.players[1].GetComponentInChildren<Camera>().rect = new Rect(0.5f, 0.5f, 0.5f, 0.5f);
+                        NetGame.instance.players[2].GetComponentInChildren<Camera>().rect = new Rect(0, 0, 0.5f, 0.5f);
+                        NetGame.instance.players[3].GetComponentInChildren<Camera>().rect = new Rect(0.5f, 0, 0.5f, 0.5f); break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 操作玩家
+        /// </summary>
+        void PlayerOperation()
+        {
+            if (Input.GetKeyDown(Key2Keycode(addPlayer)))   //添加一个玩家
+            {
+                if (NetGame.instance.players.Count < 4)
+                {
+                    NetGame.instance.AddLocalPlayer();
+                    curPlayer = NetGame.instance.players.Count - 1;
+                }
+                else
+                    SubtitleManager.instance.SetSubtitle("玩家数以达到上限！", showTime);
+                SetPlayerControl();
+                SetPlayerCamera();
+            }
+            if (Input.GetKeyDown(Key2Keycode(removePlayer)))    //移除一个玩家
+            {
+                if (curPlayer != 0)
+                {
+                    NetGame.instance.RemoveLocalPlayer(NetGame.instance.players[curPlayer]);
+                    curPlayer = NetGame.instance.players.Count - 1;
+                }
+                else
+                    SubtitleManager.instance.SetSubtitle("无法移除初始玩家", showTime);
+                SetPlayerControl();
+                SetPlayerCamera();
+            }
+            if (Input.GetKeyDown(Key2Keycode(previousPlayer)))  //切换至上一个玩家
+            {
+                curPlayer = (curPlayer - 1 + NetGame.instance.players.Count) % NetGame.instance.players.Count;
+                SetPlayerControl();
+                SetPlayerCamera();
+            }
+            if (Input.GetKeyDown(Key2Keycode(nextPlayer)))  //切换至下一个玩家
+            {
+                curPlayer = (curPlayer + 1) % NetGame.instance.players.Count;
+                SetPlayerControl();
+                SetPlayerCamera();
+            }
+            if (Input.GetKeyDown(Key2Keycode(focusPlayer)))     //切换显示模式
+            {
+                isFocus = !isFocus;
+                SetPlayerCamera();
+            }
         }
 
         /// <summary>
@@ -483,8 +596,9 @@ namespace DebugHelper
         }
 
         Game g;     //Game脚本对象
-        Human h;    //Human脚本对象
-        GameObject c;   //摄像机物体
+        int curPlayer = 0;    //当前玩家
+        Human h;        //当前玩家human
+        Camera c;       //当前玩家camera
         GameObject tar;     //落点指示器
         GameObject line;    //连接线
         Transform n;        //网络信息
@@ -508,7 +622,7 @@ namespace DebugHelper
         //////////////////////////////////////////////////////////////////////
         [Tooltip("放人快捷键")]
         public Key dropMan = Key.Q;
-        public Vector3 dropManPos;
+        Vector3 dropManPos;
         //////////////////////////////////////////////////////////////////////
         [Tooltip("临时保存快捷键")]
         public Key tempSave = Key.Num3;
@@ -574,6 +688,18 @@ namespace DebugHelper
         /////////////////////////////////////////////////////////////////////
         [Tooltip("是否落地眩晕")]
         public bool isUnconscious = false;
+        /////////////////////////////////////////////////////////////////////
+        [Tooltip("添加玩家快捷键")]
+        public Key addPlayer = Key.Ins;
+        [Tooltip("移除玩家快捷键")]
+        public Key removePlayer = Key.Del;
+        [Tooltip("上一个玩家快捷键")]
+        public Key previousPlayer = Key.PageUp;
+        [Tooltip("下一个玩家快捷键")]
+        public Key nextPlayer = Key.PageDown;
+        [Tooltip("聚焦玩家快捷键")]
+        public Key focusPlayer = Key.Home;
+        bool isFocus;
 
         public enum Key
         {
