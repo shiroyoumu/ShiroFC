@@ -273,6 +273,31 @@ namespace EditorFC
 		}
 
 		/// <summary>
+		/// 为所有刚体添加NetBody
+		/// </summary>
+		public static void AddAllNetBody()
+		{
+			Rigidbody[] rbs = GameObject.FindObjectsOfType<Rigidbody>();
+			int num = 0;
+			foreach (var item in rbs)
+			{
+				if (!item.GetComponent<NetBody>())
+				{
+					item.gameObject.AddComponent<NetBody>();
+					num++;
+				}
+			}
+			if (num == 0)
+			{
+				ErrorCheckWindow.log += "没有刚体需要添加Net Body";
+			}
+			else
+			{
+				ErrorCheckWindow.log = $"已为 {num} 个刚体添加Net Body";
+			}
+		}
+
+		/// <summary>
 		/// 相同组件对
 		/// </summary>
 		public struct ComponentPair

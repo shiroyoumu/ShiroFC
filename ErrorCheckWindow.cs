@@ -39,11 +39,13 @@ namespace EditorFC
 			GUILayout.Space(3);
 			scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
 			//报错项目开始
+			nError = 0;
 			if (ifCkRigid)
 			{
 				List<GameObject> list = ErrorCheck.CheckNetbody(level);
 				if (list.Count > 0)
 				{
+					nError += list.Count;
 					foldBool[0].target = EditorGUILayout.Foldout(foldBool[0].target, $"{list.Count}个：该分类下物体具有RigidBody但是缺少Net Body");
 					if (EditorGUILayout.BeginFadeGroup(foldBool[0].faded))
 					{
@@ -61,6 +63,7 @@ namespace EditorFC
 				List<Node> list = ErrorCheck.CheckNetSignal();
 				if (list.Count > 0)
 				{
+					nError += list.Count;
 					foldBool[1].target = EditorGUILayout.Foldout(foldBool[1].target, $"{list.Count}个：该分类下的组件其输入端路径上缺少Net Signal");
 					if (EditorGUILayout.BeginFadeGroup(foldBool[1].faded))
 					{
@@ -78,6 +81,7 @@ namespace EditorFC
 				List<NodeGraph> list2 = ErrorCheck.CheckNetSignalInGraph();
 				if (list2.Count > 0)
 				{
+					nError += list.Count;
 					foldBool[2].target = EditorGUILayout.Foldout(foldBool[2].target, $"{list2.Count}个：该分类下节点图的输出端前并不是都接有Net Signal");
 					if (EditorGUILayout.BeginFadeGroup(foldBool[2].faded))
 					{
@@ -98,6 +102,7 @@ namespace EditorFC
 				List<ErrorCheck.ComponentPair> list = ErrorCheck.CheckLevelParts();
 				if (list.Count > 0)
 				{
+					nError += list.Count;
 					foldBool[3].target = EditorGUILayout.Foldout(foldBool[3].target, $"{list.Count}个：该分类下的组件其序号或ID重复");
 					if (EditorGUILayout.BeginFadeGroup(foldBool[3].faded))
 					{
@@ -122,13 +127,16 @@ namespace EditorFC
 			ifCkSignal = EditorGUILayout.Toggle("检查事件前Net Signal", ifCkSignal);
 			ifCkCkeckpoint = EditorGUILayout.Toggle("检查Checkpoint和Net Scene", ifCkCkeckpoint);
 			GUILayout.Space(10);
-			isCheck = GUILayout.Button("为所有刚体添加Net Body", GUILayout.Width(240));
+			if (GUILayout.Button("为所有刚体添加Net Body", GUILayout.Width(240)))
+				ErrorCheck.AddAllNetBody();
+
 			GUILayout.Space(10);
 
 			EditorGUILayout.EndVertical();
 
 			EditorGUILayout.EndHorizontal();
 			GUILayout.Space(5);
+			//log = $"检测到 {nError} 个问题";
 			GUILayout.TextArea(log, new GUILayoutOption[] { GUILayout.Height(30) });
 		}
 
@@ -172,6 +180,7 @@ namespace EditorFC
 		public bool ifCkSignal = true;
 		public bool ifCkCkeckpoint = true;
 		bool isCheck;
+		int nError = 0;
 		Vector2 scrollPos;
 		public static string log;
 	}
