@@ -52,6 +52,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ErrorCheckWindow.cs" />
     <Compile Include="UsefulMenuItem.cs" />
     <Compile Include="DebugHelperWindow.cs" />
     <Compile Include="ErrorCheck.cs" />

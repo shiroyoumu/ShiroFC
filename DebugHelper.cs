@@ -396,12 +396,22 @@ namespace DebugHelper
         /// </summary>
         void SetConscious()
         {
-            Type t = h.GetType();
-            FieldInfo fInfo = t.GetField("maxUnconsciousTime", BindingFlags.NonPublic | BindingFlags.Instance);
             if (!isUnconscious)
-                fInfo.SetValue(h, 0f);
+            {
+                foreach (var item in NetGame.instance.players)
+                {
+                    FieldInfo fInfo = item.GetComponentInChildren<Human>().GetType().GetField("maxUnconsciousTime", BindingFlags.NonPublic | BindingFlags.Instance);
+                    fInfo.SetValue(h, 0f);
+                }
+            }
             else
-                fInfo.SetValue(h, 3f);
+            {
+                foreach (var item in NetGame.instance.players)
+                {
+                    FieldInfo fInfo = item.GetComponentInChildren<Human>().GetType().GetField("maxUnconsciousTime", BindingFlags.NonPublic | BindingFlags.Instance);
+                    fInfo.SetValue(h, 3f);
+                }
+            }
         }
 
         /// <summary>
@@ -416,7 +426,7 @@ namespace DebugHelper
                     NetGame.instance.players[i].isLocalPlayer = true;   //启用控制
                     h = NetGame.instance.players[i].GetComponentInChildren<Human>();    //获取Human、Camera引用
                     c = NetGame.instance.players[i].GetComponentInChildren<Camera>();
-                    Destroy(FindObjectOfType<AudioListener>());     //删除音频接收器
+                    DestroyImmediate(FindObjectOfType<AudioListener>());     //删除音频接收器
                     h.GetComponentInChildren<HumanHead>().gameObject.AddComponent<AudioListener>();     //重新在当前玩家头上添加音频接收器
                 }
                 else
@@ -435,7 +445,7 @@ namespace DebugHelper
         /// </summary>
         void SetPlayerCamera()
         {
-            if (isFocus)    //处在聚焦模式下
+            if (isFocus && NetGame.instance.players[0].GetComponentInChildren<Camera>())    //处在聚焦模式下，且不在自由视角下
             {
                 for (int i = 0; i < NetGame.instance.players.Count; i++)
                 {
@@ -448,7 +458,7 @@ namespace DebugHelper
                         NetGame.instance.players[i].GetComponentInChildren<Camera>().depth = -0.1f;
                 }
             }
-            else   //处在总览模式下
+            else if (NetGame.instance.players[0].GetComponentInChildren<Camera>())   //处在总览模式下，且不在自由视角下
             {
                 int n = NetGame.instance.players.Count;
                 switch (n)  //分屏
@@ -487,6 +497,7 @@ namespace DebugHelper
                     SubtitleManager.instance.SetSubtitle("玩家数以达到上限！", showTime);
                 SetPlayerControl();
                 SetPlayerCamera();
+                SetConscious();
             }
             if (Input.GetKeyDown(Key2Keycode(removePlayer)))    //移除一个玩家
             {

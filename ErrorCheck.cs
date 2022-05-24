@@ -1,142 +1,22 @@
-﻿using System.Collections;
+﻿using HumanAPI;
+using Multiplayer;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using HumanAPI;
-using UnityEditor;
-using System;
-using Multiplayer;
 
 namespace EditorFC
 {
-	public class ErrorCheckWindow : EditorWindow
+	public class ErrorCheck
 	{
-		[MenuItem("Human/Error Check Window %&x", false, 2003)]
-		/// <summary>
-		/// 打开窗口
-		/// </summary>
-		static void ShowWindow()
-		{
-			EditorWindow win = EditorWindow.GetWindow<ErrorCheckWindow>();
-			win.titleContent = new GUIContent("检查网络同步问题");
-			win.minSize = new Vector2(350, 574);
-			win.maxSize = new Vector2(350, 575);
-			win.Show();
-		}
-
-		void OnEnable()
-		{
-			getLevelObj();
-		}
-
-		void OnGUI()
-		{
-			GUILayout.Space(5);
-			ifCkRigid = EditorGUILayout.Toggle("检查刚体Net body", ifCkRigid);
-			ifCkSignal = EditorGUILayout.Toggle("检查事件前Net Signal", ifCkSignal);
-			GUILayout.Space(5);
-			if (GUILayout.Button("为所有刚体添加Net Body", new GUILayoutOption[0]) && level)
-				AddAllNetBody();
-			GUILayout.Space(5);
-			if (GUILayout.Button("检    查", new GUILayoutOption[0]) && level)
-				CheckNetError();
-			GUILayout.Label("________________________________________________");
-			GUILayout.Space(5);
-			GUILayout.Label("问题报告");
-			GUILayout.Space(5);
-			scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Width(345), GUILayout.Height(390));
-			if (ErrItemList != null)
-			{
-				foreach (var item in ErrItemList)
-				{
-					if (item.c.GetType() == typeof(Rigidbody))
-						CreateLogItem((Rigidbody)item.c, item.t);
-					else
-						CreateLogItem((Node)item.c, item.t);
-				}
-			}
-			EditorGUILayout.EndScrollView();
-			GUILayout.Space(5);
-			GUILayout.TextArea(UniLog, new GUILayoutOption[] { GUILayout.Height(30) });
-		}
 
 		/// <summary>
-		/// 为所有刚体添加Net Body
+		/// 检查刚体缺少NetBody
 		/// </summary>
-		public void AddAllNetBody()
+		/// <param name="level">level物体</param>
+		/// <returns>缺少NetBody的物体列表</returns>
+		public static List<GameObject> CheckNetbody(GameObject level)
 		{
-			Rigidbody[] r = level.GetComponentsInChildren<Rigidbody>();
-			int i = 0;
-            foreach (var item in r)
-            {
-				if (!item.GetComponent<NetBody>())
-				{ 
-					item.gameObject.AddComponent<NetBody>();
-					i++;
-				}	
-            }
-			if (i == 0)
-				UniLog = "没有刚体需要添加Net Body"; 
-			else
-				UniLog = String.Format("已为 {0} 个刚体添加Net Body", i);
-		}
-
-		/// <summary>
-		/// 检查网络错误
-		/// </summary>
-		public void CheckNetError()
-		{
-			//清空数据
-			ErrItemList = new List<ErrItem>();
-			nRigid = nSignal = 0;
-			//根据要求检错
-			if (ifCkRigid)
-			{
-				CheckI();
-			}
-			if (ifCkSignal)
-			{
-				CheckII();
-			}
-			//输出总览
-			if (nRigid + nSignal > 0)
-			{
-				if (ifCkRigid && ifCkSignal)
-					UniLog = string.Format("场景包含 {0} 个刚体问题，包含 {1} 个信号同步问题", nRigid, nSignal);
-				else
-					if (ifCkRigid)
-					UniLog = string.Format("场景包含 {0} 个刚体问题", nRigid);
-				else
-						if (ifCkSignal)
-					UniLog = string.Format("场景包含 {0} 个信号同步问题", nSignal);
-			}
-			else
-			{
-				UniLog = "未检测到网络信号同步问题";
-			}
-		}
-
-		/// <summary>
-		/// 找Level物体
-		/// </summary>
-		void getLevelObj() 
-		{
-			try
-			{
-				ErrorCheckWindow.level = GameObject.FindGameObjectWithTag("Level");
-				BuiltinLevel level = ErrorCheckWindow.level.GetComponent<BuiltinLevel>();
-			}
-			catch (NullReferenceException)
-			{
-				UniLog = "Level物体未找到！";
-				return;
-			}
-		}
-
-		/// <summary>
-		/// 检查刚体
-		/// </summary>
-		void CheckI()
-		{
+			List<GameObject> gameObjects = new List<GameObject>();
 			//收集所有组件
 			Rigidbody[] gos = level.GetComponentsInChildren<Rigidbody>();
 			foreach (var item in gos)
@@ -144,10 +24,10 @@ namespace EditorFC
 				if (!item.gameObject.isStatic && !item.GetComponent<NetBody>())
 				{
 					//如果物体没有Netbody，添加错误条目
-					ErrItemList.Add(CreateAnErrItem(item, EnumErrType.Err_1));
-					nRigid++;
+					gameObjects.Add(item.gameObject);
 				}
 			}
+			return gameObjects;
 		}
 
 		/// <summary>
@@ -195,133 +75,214 @@ namespace EditorFC
 		}
 
 		/// <summary>
+		/// 遍历搜索一个NodeGraph输出节点前向路径是否有Net Signal
+		/// </summary>
+		/// <param name="node">头节点</param>
+		void FindNetSignalInGraph(Node node)
+		{
+			if (node)
+			{
+				//Debug.Log(node.GetType());
+				//判断该节点是否为NetSignal，是则有NetSignal，返回
+				if (node.GetType() == typeof(NetSignal))
+				{ nRecursion--; return; }
+				//不是的话，收集输入端
+				List<NodeSocket> L = node.ListNodeSockets();
+				List<NodeInput> LIn = new List<NodeInput>();
+				foreach (var i in L)
+				{
+					if (i.GetType() == typeof(NodeInput))
+					{
+						LIn.Add((NodeInput)i);
+					}
+				}
+				//为0，说明找到头也没有NetSignal，缺失，返回
+				if (LIn.Count == 0 || node.GetType() == typeof(NodeGraph))
+				{ isLackNetS = true; nRecursion--; return; }
+				//大于等于1，说明该节点分叉了，继续遍历每个分支
+				if (LIn.Count >= 1)
+				{
+					foreach (var i in LIn)
+					{
+						if (i.connectedNode == null)    //如果没连接别的节点，视为缺失，返回
+						{ isLackNetS = true; nRecursion--; return; }
+						else    //否则继续找
+						{
+							if (nRecursion < 50)//递归不超过50层
+							{
+								nRecursion++;
+								FindNetSignalInGraph(i.connectedNode);
+							}
+							else    //超过说明没有net signal
+							{ isLackNetS = true; nRecursion--; return; }
+						}
+					}
+				}
+				nRecursion--;//递归返回前深度 -1
+			}
+			else
+			{ isLackNetS = true; nRecursion--; return; }
+		}
+
+		/// <summary>
 		/// 遍历搜索节点列表中的Net Signal
 		/// </summary>
 		/// <param name="gos">要遍历的节点列表</param>
-		/// <param name="e">指定错误类型</param>
-		void FindNetSignalInList(Node[] gos, EnumErrType e)
+		/// <returns>缺少Net Signal的节点列表</returns>
+		List<Node> FindNetSignalInList(Node[] gos)
 		{
+			List<Node> list = new List<Node>();
 			foreach (var item in gos)
 			{
 				isLackNetS = false;//清除标志位
+				nRecursion = 0;
 				FindNetSignal(item);
 				if (isLackNetS)
 				{
-					ErrItemList.Add(CreateAnErrItem(item, e));
-					nSignal++;
+					list.Add(item);
 				}
 			}
+			return list;
 		}
 
 		/// <summary>
-		/// 检查Net Signal
+		/// 遍历搜索节点图内部的Net Signal
 		/// </summary>
-		void CheckII()
+		/// <param name="ngs">要遍历的节点列表</param>
+		/// <returns>缺少Net Signal的节点列表</returns>
+		List<NodeGraph> FindNetSignalInList(NodeGraph[] ngs)
 		{
-			SignalUnityEvent[] gos2 = level.GetComponentsInChildren<SignalUnityEvent>();
-			FindNetSignalInList(gos2, EnumErrType.Err_2);
-
-			LerpEmission[] gos3 = level.GetComponentsInChildren<LerpEmission>();
-			FindNetSignalInList(gos3, EnumErrType.Err_3);
-
-			LerpLightIntensity[] gos4 = level.GetComponentsInChildren<LerpLightIntensity>();
-			FindNetSignalInList(gos4, EnumErrType.Err_4);
-
-			LerpParticles[] gos5 = level.GetComponentsInChildren<LerpParticles>();
-			FindNetSignalInList(gos5, EnumErrType.Err_5);
-
-			LerpPitch[] gos6 = level.GetComponentsInChildren<LerpPitch>();
-			FindNetSignalInList(gos6, EnumErrType.Err_6);
-
-			SignalLerpVolume[] gos7 = level.GetComponentsInChildren<SignalLerpVolume>();
-			FindNetSignalInList(gos7, EnumErrType.Err_7);
-		}
-
-		/// <summary>
-		/// 创建ErrItem结构体
-		/// </summary>
-		/// <param name="c">组件</param>
-		/// <param name="t">错误类型</param>
-		/// <returns></returns>
-		public ErrItem CreateAnErrItem(Component c, EnumErrType t)
-		{
-			ErrItem item = new ErrItem();
-			item.c = c;
-			item.t = t;
-			return item;
-		}
-
-		/// <summary>
-		/// 创建一个NetBody条目
-		/// </summary>
-		/// <param name="r">物体</param>
-		/// <param name="errT">错误类型</param>
-		public static void CreateLogItem(Rigidbody r, EnumErrType errT)
-		{
-			EditorGUILayout.ObjectField(r.gameObject, typeof(GameObject), true);
-			GUILayout.Label(TranslateLog(errT));
-			GUILayout.Space(3);
-		}
-
-		/// <summary>
-		/// 创建一个netsignal条目
-		/// </summary>
-		/// <param name="c">组件</param>
-		/// <param name="errT">错误类型</param>
-		public static void CreateLogItem(Node c, EnumErrType errT)
-		{
-			EditorGUILayout.BeginHorizontal();
-			EditorGUILayout.ColorField(c.nodeColour, GUILayout.Width(50));
-			EditorGUILayout.ObjectField(c, c.GetType(), true);
-			EditorGUILayout.EndHorizontal();
-			GUILayout.Label(TranslateLog(errT));
-			GUILayout.Space(3);
-		}
-
-		/// <summary>
-		/// 返回错误类型对应的文字描述
-		/// </summary>
-		/// <param name="errT">错误类型</param>
-		/// <returns></returns>
-		static string TranslateLog(EnumErrType errT)
-		{
-			switch (errT)
+			List<NodeGraph> list = new List<NodeGraph>();
+			foreach (var i in ngs)
 			{
-				case EnumErrType.Err_1: return "该物体具有Rigidbody但缺少Net Body";
-				case EnumErrType.Err_2: return "该物体具有Signal Unity Event但其输入端路径上缺少Net Signal";
-				case EnumErrType.Err_3: return "该物体具有Lerp Emission但其输入端路径上缺少Net Signal";
-				case EnumErrType.Err_4: return "该物体具有Lerp Light Intensity但其输入端路径上缺少Net Signal";
-				case EnumErrType.Err_5: return "该物体具有Lerp Particles但其输入端路径上缺少Net Signal";
-				case EnumErrType.Err_6: return "该物体具有Lerp Pitch但其输入端路径上缺少Net Signal";
-				case EnumErrType.Err_7: return "该物体具有Signal Lerp Volume但其输入端路径上缺少Net Signal";
+				foreach (var j in i.outputs)
+				{
+					isLackNetS = false;
+					nRecursion = 0;
+					FindNetSignalInGraph(j.outputSocket.connectedNode);
+					if (isLackNetS)
+					{
+						list.Add(i);
+						break;
+					}
+				}
 			}
-			return "ERROR";
+			return list;
 		}
 
-		public string UniLog;   //总数信息
-		public enum EnumErrType
+		/// <summary>
+		/// 检查缺少Net Signal
+		/// </summary>
+		/// <returns>缺少Net Signal的节点列表</returns>
+		public static List<Node> CheckNetSignal()
 		{
-			Err_1 = 1,
-			Err_2,
-			Err_3,
-			Err_4,
-			Err_5,
-			Err_6,
-			Err_7,
+			SignalUnityEvent[] gos2 = GameObject.FindObjectsOfType<SignalUnityEvent>();
+			LerpEmission[] gos3 = GameObject.FindObjectsOfType<LerpEmission>();
+			LerpLightIntensity[] gos4 = GameObject.FindObjectsOfType<LerpLightIntensity>();
+			LerpParticles[] gos5 = GameObject.FindObjectsOfType<LerpParticles>();
+			LerpPitch[] gos6 = GameObject.FindObjectsOfType<LerpPitch>();
+			SignalLerpVolume[] gos7 = GameObject.FindObjectsOfType<SignalLerpVolume>();
+			List<Node> list = new List<Node>();
+			foreach (var item in instance.FindNetSignalInList(gos2))
+				list.Add(item);
+			foreach (var item in instance.FindNetSignalInList(gos3))
+				list.Add(item);
+			foreach (var item in instance.FindNetSignalInList(gos4))
+				list.Add(item);
+			foreach (var item in instance.FindNetSignalInList(gos5))
+				list.Add(item);
+			foreach (var item in instance.FindNetSignalInList(gos6))
+				list.Add(item);
+			foreach (var item in instance.FindNetSignalInList(gos7))
+				list.Add(item);
+			return list;
 		}
-		public static int nRecursion = 0;//递归计数器
-		public static bool isLackNetS = false;//是否缺少Net Signal
-		static int nRigid;//刚体问题个数
-		static int nSignal;//信号问题个数
-		public static List<ErrItem> ErrItemList;//出错组件列表
-		public struct ErrItem
+
+		/// <summary>
+		/// 在节点图中检查缺少Net Signal
+		/// </summary>
+		/// <returns>缺少Net Signal的节点图</returns>
+		public static List<NodeGraph> CheckNetSignalInGraph()
 		{
-			public Component c;
-			public EnumErrType t;
+			NodeGraph[] ngs = GameObject.FindObjectsOfType<NodeGraph>();
+			return instance.FindNetSignalInList(ngs);
 		}
-		public static GameObject level;
-		public static bool ifCkRigid = true;
-		public static bool ifCkSignal = true;
-		Vector2 scrollPos;
+
+		/// <summary>
+		/// 寻找相同的Checkpoint
+		/// </summary>
+		/// <param name="cks">比对数组</param>
+		/// <returns>相同number的Checkpoint对</returns>
+		List<ComponentPair> FindSameCheckpoint(Checkpoint[] cks)
+		{
+			List<ComponentPair> list = new List<ComponentPair>();
+			for (int i = 0; i < cks.Length - 1; i++)
+			{
+				for (int j = i + 1; j < cks.Length; j++)
+				{
+					if (cks[i].number == cks[j].number)
+					{
+						ComponentPair pair;
+						pair.c1 = cks[i];
+						pair.c2 = cks[j];
+						list.Add(pair);
+					}
+				}
+			}
+			return list;
+		}
+
+		/// <summary>
+		/// 寻找相同的NetScene
+		/// </summary>
+		/// <param name="nss">比对数组</param>
+		/// <returns>相同NetId的NetScene对</returns>
+		List<ComponentPair> FindSameNetScene(NetScene[] nss)
+		{
+			List<ComponentPair> list = new List<ComponentPair>();
+			for (int i = 0; i < nss.Length - 1; i++)
+			{
+				for (int j = i + 1; j < nss.Length; j++)
+				{
+					if (nss[i].netId == nss[j].netId)
+					{
+						ComponentPair pair;
+						pair.c1 = nss[i];
+						pair.c2 = nss[j];
+						list.Add(pair);
+					}
+				}
+			}
+			return list;
+		}
+
+		/// <summary>
+		/// 检查Checkpoint和Net Scene
+		/// </summary>
+		/// <returns>相同数据对列表</returns>
+		public static List<ComponentPair> CheckLevelParts()
+		{
+			List<ComponentPair> list = new List<ComponentPair>();
+			Checkpoint[] cks = GameObject.FindObjectsOfType<Checkpoint>();
+			foreach (var item in instance.FindSameCheckpoint(cks))
+				list.Add(item);
+			NetScene[] nss = GameObject.FindObjectsOfType<NetScene>();
+			foreach (var item in instance.FindSameNetScene(nss))
+				list.Add(item);
+			return list;
+		}
+
+		/// <summary>
+		/// 相同组件对
+		/// </summary>
+		public struct ComponentPair
+		{
+			public Component c1;
+			public Component c2;
+		};
+
+		static ErrorCheck instance = new ErrorCheck();
+		int nRecursion = 0;//递归计数器
+		bool isLackNetS = false;//是否缺少Net Signal
 	}
 }
