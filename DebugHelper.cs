@@ -31,12 +31,6 @@ namespace DebugHelper
             line.GetComponent<Renderer>().material = m;
             tar.SetActive(false);       //隐藏
             line.SetActive(false);
-            try
-            {
-                asm = Assembly.LoadFile(editorPath);
-            }
-            catch (NullReferenceException)
-            { Debug.LogError("文件未找到，请检查文件路径并重新运行！"); }
             FindObj();
             SetConscious();
             SetSubtitle();
@@ -382,7 +376,7 @@ namespace DebugHelper
             {
                 try
                 {
-                    Type t1 = asm.GetType("UnityEditor.GameView");
+                    Type t1 = Type.GetType("UnityEditor.GameView,UnityEditor");
                     EditorWindow win = EditorWindow.GetWindow(t1);
                     win.maximized = !win.maximized;
                 }
@@ -699,7 +693,6 @@ namespace DebugHelper
         [Tooltip("最大化Game面板快捷键")]
         public Key maxGameWindow = Key.M;
         Assembly asm;
-        public string editorPath = @"W:\Unity2017.4.13f1\Editor\Data\Managed\UnityEditor.dll";
         /////////////////////////////////////////////////////////////////////
         [Tooltip("是否落地眩晕")]
         public bool isUnconscious = false;
