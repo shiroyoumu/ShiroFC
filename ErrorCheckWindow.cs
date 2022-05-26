@@ -11,13 +11,13 @@ namespace EditorFC
 {
 	public class ErrorCheckWindow : ScriptableWizard
 	{
-		[MenuItem("Human/ErrorTTTTTEST %&x", false, 2003)]
+		[MenuItem("Human/Check Net Error %&x", false, 2003)]
 		/// <summary>
 		/// 打开窗口
 		/// </summary>
 		static void ShowWindow()
 		{
-			EditorWindow win = EditorWindow.GetWindow<ErrorCheckWindow>();
+			EditorWindow win = GetWindow<ErrorCheckWindow>();
 			win.titleContent = new GUIContent("检查网络同步问题");
 			win.minSize = new Vector2(600, 400);
 			win.maxSize = new Vector2(601, 401);
@@ -39,85 +39,51 @@ namespace EditorFC
 			GUILayout.Space(3);
 			scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
 			//报错项目开始
-			nError = 0;
-			if (ifCkRigid)
+			if (listNetBody.Count > 0)
 			{
-				List<GameObject> list = ErrorCheck.CheckNetbody(level);
-				if (list.Count > 0)
+				foldBool[0].target = EditorGUILayout.Foldout(foldBool[0].target, $"{listNetBody.Count}个：该分类下物体具有RigidBody但是缺少Net Body");
+				if (EditorGUILayout.BeginFadeGroup(foldBool[0].faded))
 				{
-					nError += list.Count;
-					foldBool[0].target = EditorGUILayout.Foldout(foldBool[0].target, $"{list.Count}个：该分类下物体具有RigidBody但是缺少Net Body");
-					if (EditorGUILayout.BeginFadeGroup(foldBool[0].faded))
+					foreach (var item in listNetBody)
 					{
-						foreach (var item in list)
-						{
-							EditorGUILayout.ObjectField(item, typeof(GameObject), true);
-							GUILayout.Space(3);
-						}
+						EditorGUILayout.ObjectField(item, typeof(GameObject), true);
+						GUILayout.Space(3);
 					}
-					EditorGUILayout.EndFadeGroup();
 				}
-			}
-			if (ifCkSignal)
+				EditorGUILayout.EndFadeGroup();
+			}			
+			if (listNetSignal.Count > 0)
 			{
-				List<Node> list = ErrorCheck.CheckNetSignal();
-				if (list.Count > 0)
+				foldBool[1].target = EditorGUILayout.Foldout(foldBool[1].target, $"{listNetSignal.Count}个：该分类下的组件其输入端路径上缺少Net Signal");
+				if (EditorGUILayout.BeginFadeGroup(foldBool[1].faded))
 				{
-					nError += list.Count;
-					foldBool[1].target = EditorGUILayout.Foldout(foldBool[1].target, $"{list.Count}个：该分类下的组件其输入端路径上缺少Net Signal");
-					if (EditorGUILayout.BeginFadeGroup(foldBool[1].faded))
+					foreach (var item in listNetSignal)
 					{
-						foreach (var item in list)
-						{
-							EditorGUILayout.BeginHorizontal();
-							EditorGUILayout.ColorField(item.nodeColour, GUILayout.Width(50));
-							EditorGUILayout.ObjectField(item, item.GetType(), true);
-							EditorGUILayout.EndHorizontal();
-							GUILayout.Space(3);
-						}
+						EditorGUILayout.BeginHorizontal();
+						EditorGUILayout.ColorField(item.nodeColour, GUILayout.Width(50));
+						EditorGUILayout.ObjectField(item, item.GetType(), true);
+						EditorGUILayout.EndHorizontal();
+						GUILayout.Space(3);
 					}
-					EditorGUILayout.EndFadeGroup();
 				}
-				List<NodeGraph> list2 = ErrorCheck.CheckNetSignalInGraph();
-				if (list2.Count > 0)
-				{
-					nError += list.Count;
-					foldBool[2].target = EditorGUILayout.Foldout(foldBool[2].target, $"{list2.Count}个：该分类下节点图的输出端前并不是都接有Net Signal");
-					if (EditorGUILayout.BeginFadeGroup(foldBool[2].faded))
-					{
-						foreach (var item in list2)
-						{
-							EditorGUILayout.BeginHorizontal();
-							EditorGUILayout.ColorField(item.nodeColour, GUILayout.Width(50));
-							EditorGUILayout.ObjectField(item, item.GetType(), true);
-							EditorGUILayout.EndHorizontal();
-							GUILayout.Space(3);
-						}
-					}
-					EditorGUILayout.EndFadeGroup();
-				}
-			}
-			if (ifCkCkeckpoint)
+				EditorGUILayout.EndFadeGroup();
+			}			
+			if (listLevelParts.Count > 0)
 			{
-				List<ErrorCheck.ComponentPair> list = ErrorCheck.CheckLevelParts();
-				if (list.Count > 0)
+				foldBool[2].target = EditorGUILayout.Foldout(foldBool[2].target, $"{listLevelParts.Count}个：该分类下的组件其序号或ID重复");
+				if (EditorGUILayout.BeginFadeGroup(foldBool[2].faded))
 				{
-					nError += list.Count;
-					foldBool[3].target = EditorGUILayout.Foldout(foldBool[3].target, $"{list.Count}个：该分类下的组件其序号或ID重复");
-					if (EditorGUILayout.BeginFadeGroup(foldBool[3].faded))
+					foreach (var item in listLevelParts)
 					{
-						foreach (var item in list)
-						{
-							EditorGUILayout.BeginHorizontal();
-							EditorGUILayout.ObjectField(item.c1, item.c1.GetType(), true);
-							EditorGUILayout.ObjectField(item.c2, item.c2.GetType(), true);
-							EditorGUILayout.EndHorizontal();
-							GUILayout.Space(3);
-						}
+						EditorGUILayout.BeginHorizontal();
+						EditorGUILayout.ObjectField(item.c1, item.c1.GetType(), true);
+						EditorGUILayout.ObjectField(item.c2, item.c2.GetType(), true);
+						EditorGUILayout.EndHorizontal();
+						GUILayout.Space(3);
 					}
-					EditorGUILayout.EndFadeGroup();
 				}
-			}
+				EditorGUILayout.EndFadeGroup();
+			}		
 			//报错项目毕
 			EditorGUILayout.EndScrollView();
 			EditorGUILayout.EndVertical();
@@ -126,18 +92,44 @@ namespace EditorFC
 			ifCkRigid = EditorGUILayout.Toggle("检查刚体Net body", ifCkRigid);
 			ifCkSignal = EditorGUILayout.Toggle("检查事件前Net Signal", ifCkSignal);
 			ifCkCkeckpoint = EditorGUILayout.Toggle("检查Checkpoint和Net Scene", ifCkCkeckpoint);
+			if (GUILayout.Button("检    查") && level)
+				Check();
 			GUILayout.Space(10);
 			if (GUILayout.Button("为所有刚体添加Net Body", GUILayout.Width(240)))
 				ErrorCheck.AddAllNetBody();
 
 			GUILayout.Space(10);
-
 			EditorGUILayout.EndVertical();
-
 			EditorGUILayout.EndHorizontal();
 			GUILayout.Space(5);
-			//log = $"检测到 {nError} 个问题";
 			GUILayout.TextArea(log, new GUILayoutOption[] { GUILayout.Height(30) });
+		}
+
+		/// <summary>
+		/// 检查问题
+		/// </summary>
+		void Check()
+		{
+			listNetBody.Clear();
+			listNetSignal.Clear();
+			listLevelParts.Clear();
+			if (ifCkRigid)
+			{
+				listNetBody = ErrorCheck.CheckNetbody(level);
+			}
+			if (ifCkSignal)
+			{
+				listNetSignal = ErrorCheck.CheckNetSignal();
+			}
+			if (ifCkCkeckpoint)
+			{
+				listLevelParts = ErrorCheck.CheckLevelParts();
+			}
+			int n = listNetBody.Count + listNetSignal.Count + listLevelParts.Count;
+			if (n == 0)
+				log = "没有发现问题";
+			else
+				log = $"一共存在 {n} 个问题";
 		}
 
 		void InitialFoldBool()
@@ -179,8 +171,9 @@ namespace EditorFC
 		public bool ifCkRigid = true;
 		public bool ifCkSignal = true;
 		public bool ifCkCkeckpoint = true;
-		bool isCheck;
-		int nError = 0;
+		List<GameObject> listNetBody = new List<GameObject>();
+		List<Node> listNetSignal = new List<Node>();
+		List<ErrorCheck.ComponentPair> listLevelParts = new List<ErrorCheck.ComponentPair>();
 		Vector2 scrollPos;
 		public static string log;
 	}

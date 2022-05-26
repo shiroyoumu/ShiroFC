@@ -3,6 +3,8 @@ using Multiplayer;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
+using System;
 
 namespace EditorFC
 {
@@ -31,97 +33,74 @@ namespace EditorFC
 		}
 
 		/// <summary>
-		/// 遍历搜索一个节点前向路径是否有Net Signal
+		/// 遍历搜索一个NodeGraph输出节点前向路径是否有Net Signal
 		/// </summary>
-		/// <param name="node">头节点</param>
-		void FindNetSignal(Node node)
+		/// <param name="node">根节点</param>
+		/// <param name="socketName">前一节点连入根节点的接口名</param>
+		void FindNetSignal(Node node, string socketName)
 		{
-			//Debug.Log(node.GetType());
-			//判断该节点是否为NetSignal，是则有NetSignal，返回
+			//判断是否找到Net Signal
 			if (node.GetType() == typeof(NetSignal))
-			{ nRecursion--; return; }
-			//不是的话，收集输入端
-			List<NodeSocket> L = node.ListNodeSockets();
-			List<NodeInput> LIn = new List<NodeInput>();
-			foreach (var i in L)
 			{
-				if (i.GetType() == typeof(NodeInput))
+				isLack = false; nRecursion--; return;
+			}
+			//没找到的话，收集输入端		
+			List<NodeInput> ns = new List<NodeInput>();//根节点所有输入端列表
+													   //收集非Node Graph节点输入端
+			if (node.GetType() != typeof(NodeGraph))
+			{
+				//获取所有接口，将输入端添加进ns
+				foreach (var item in node.ListAllSockets())
 				{
-					LIn.Add((NodeInput)i);
+					if (item.GetType() == typeof(NodeInput))
+					{
+						ns.Add((NodeInput)item);
+					}
+				}
+			}
+			//收集Node Graph节点输入端
+			else
+			{
+				NodeGraph ng = (NodeGraph)node;
+				//根据输入端接口名来确定输入端（Node Graph边缘节点有且仅有一个唯一确定的输入端）
+				foreach (var item in ng.outputs)//判断边缘输出（NodeGraphOutput）节点列表
+				{
+					if (item.name == socketName)
+					{
+						ns.Add(item.outputSocket);
+					}
+				}
+				foreach (var item in ng.inputs)//判断边缘输入（NodeGraphInput）节点列表
+				{
+					if (item.name == socketName)
+						ns.Add(item.input);
 				}
 			}
 			//为0，说明找到头也没有NetSignal，缺失，返回
-			if (LIn.Count == 0) { isLackNetS = true; nRecursion--; return; }
+			if (ns.Count == 0)
+			{ isLack = true; nRecursion--; return; }
 			//大于等于1，说明该节点分叉了，继续遍历每个分支
-			if (LIn.Count >= 1)
+			if (ns.Count >= 1)
 			{
-				foreach (var i in LIn)
+				foreach (var item in ns)
 				{
-					if (i.connectedNode == null)    //如果没连接别的节点，视为缺失，返回
-					{ isLackNetS = true; nRecursion--; return; }
-					else    //否则继续找
+					//如果没连接别的节点，视为缺失，返回
+					if (item.connectedNode == null)
+					{ isLack = true; nRecursion--; return; }
+					else
 					{
-						if (nRecursion < 50)//递归不超过50层
+						//如果递归超过50层，说明死循环，视为缺失，返回
+						if (nRecursion < 50)
 						{
 							nRecursion++;
-							FindNetSignal(i.connectedNode);
+							FindNetSignal(item.connectedNode, item.connectedSocket);
 						}
-						else    //超过说明没有net signal
-						{ isLackNetS = true; nRecursion--; return; }
+						else
+						{ isLack = true; nRecursion--; return; }
 					}
 				}
 			}
-			nRecursion--;//递归返回前深度 -1
-		}
-
-		/// <summary>
-		/// 遍历搜索一个NodeGraph输出节点前向路径是否有Net Signal
-		/// </summary>
-		/// <param name="node">头节点</param>
-		void FindNetSignalInGraph(Node node)
-		{
-			if (node)
-			{
-				//Debug.Log(node.GetType());
-				//判断该节点是否为NetSignal，是则有NetSignal，返回
-				if (node.GetType() == typeof(NetSignal))
-				{ nRecursion--; return; }
-				//不是的话，收集输入端
-				List<NodeSocket> L = node.ListNodeSockets();
-				List<NodeInput> LIn = new List<NodeInput>();
-				foreach (var i in L)
-				{
-					if (i.GetType() == typeof(NodeInput))
-					{
-						LIn.Add((NodeInput)i);
-					}
-				}
-				//为0，说明找到头也没有NetSignal，缺失，返回
-				if (LIn.Count == 0 || node.GetType() == typeof(NodeGraph))
-				{ isLackNetS = true; nRecursion--; return; }
-				//大于等于1，说明该节点分叉了，继续遍历每个分支
-				if (LIn.Count >= 1)
-				{
-					foreach (var i in LIn)
-					{
-						if (i.connectedNode == null)    //如果没连接别的节点，视为缺失，返回
-						{ isLackNetS = true; nRecursion--; return; }
-						else    //否则继续找
-						{
-							if (nRecursion < 50)//递归不超过50层
-							{
-								nRecursion++;
-								FindNetSignalInGraph(i.connectedNode);
-							}
-							else    //超过说明没有net signal
-							{ isLackNetS = true; nRecursion--; return; }
-						}
-					}
-				}
-				nRecursion--;//递归返回前深度 -1
-			}
-			else
-			{ isLackNetS = true; nRecursion--; return; }
+			nRecursion--;
 		}
 
 		/// <summary>
@@ -134,37 +113,12 @@ namespace EditorFC
 			List<Node> list = new List<Node>();
 			foreach (var item in gos)
 			{
-				isLackNetS = false;//清除标志位
+				isLack = false;//清除标志位
 				nRecursion = 0;
-				FindNetSignal(item);
-				if (isLackNetS)
+				FindNetSignal(item, "");
+				if (isLack)
 				{
 					list.Add(item);
-				}
-			}
-			return list;
-		}
-
-		/// <summary>
-		/// 遍历搜索节点图内部的Net Signal
-		/// </summary>
-		/// <param name="ngs">要遍历的节点列表</param>
-		/// <returns>缺少Net Signal的节点列表</returns>
-		List<NodeGraph> FindNetSignalInList(NodeGraph[] ngs)
-		{
-			List<NodeGraph> list = new List<NodeGraph>();
-			foreach (var i in ngs)
-			{
-				foreach (var j in i.outputs)
-				{
-					isLackNetS = false;
-					nRecursion = 0;
-					FindNetSignalInGraph(j.outputSocket.connectedNode);
-					if (isLackNetS)
-					{
-						list.Add(i);
-						break;
-					}
 				}
 			}
 			return list;
@@ -176,13 +130,15 @@ namespace EditorFC
 		/// <returns>缺少Net Signal的节点列表</returns>
 		public static List<Node> CheckNetSignal()
 		{
-			SignalUnityEvent[] gos2 = GameObject.FindObjectsOfType<SignalUnityEvent>();
-			LerpEmission[] gos3 = GameObject.FindObjectsOfType<LerpEmission>();
-			LerpLightIntensity[] gos4 = GameObject.FindObjectsOfType<LerpLightIntensity>();
-			LerpParticles[] gos5 = GameObject.FindObjectsOfType<LerpParticles>();
-			LerpPitch[] gos6 = GameObject.FindObjectsOfType<LerpPitch>();
-			SignalLerpVolume[] gos7 = GameObject.FindObjectsOfType<SignalLerpVolume>();
+			SignalUnityEvent[] gos1 = GameObject.FindObjectsOfType<SignalUnityEvent>();
+			LerpEmission[] gos2 = GameObject.FindObjectsOfType<LerpEmission>();
+			LerpLightIntensity[] gos3 = GameObject.FindObjectsOfType<LerpLightIntensity>();
+			LerpParticles[] gos4 = GameObject.FindObjectsOfType<LerpParticles>();
+			LerpPitch[] gos5 = GameObject.FindObjectsOfType<LerpPitch>();
+			SignalLerpVolume[] gos6 = GameObject.FindObjectsOfType<SignalLerpVolume>();			
 			List<Node> list = new List<Node>();
+			foreach (var item in instance.FindNetSignalInList(gos1))
+				list.Add(item);
 			foreach (var item in instance.FindNetSignalInList(gos2))
 				list.Add(item);
 			foreach (var item in instance.FindNetSignalInList(gos3))
@@ -193,19 +149,7 @@ namespace EditorFC
 				list.Add(item);
 			foreach (var item in instance.FindNetSignalInList(gos6))
 				list.Add(item);
-			foreach (var item in instance.FindNetSignalInList(gos7))
-				list.Add(item);
 			return list;
-		}
-
-		/// <summary>
-		/// 在节点图中检查缺少Net Signal
-		/// </summary>
-		/// <returns>缺少Net Signal的节点图</returns>
-		public static List<NodeGraph> CheckNetSignalInGraph()
-		{
-			NodeGraph[] ngs = GameObject.FindObjectsOfType<NodeGraph>();
-			return instance.FindNetSignalInList(ngs);
 		}
 
 		/// <summary>
@@ -289,7 +233,7 @@ namespace EditorFC
 			}
 			if (num == 0)
 			{
-				ErrorCheckWindow.log += "没有刚体需要添加Net Body";
+				ErrorCheckWindow.log = "没有刚体需要添加Net Body";
 			}
 			else
 			{
@@ -308,6 +252,6 @@ namespace EditorFC
 
 		static ErrorCheck instance = new ErrorCheck();
 		int nRecursion = 0;//递归计数器
-		bool isLackNetS = false;//是否缺少Net Signal
+		bool isLack = false;//是否缺少Net Signal
 	}
 }

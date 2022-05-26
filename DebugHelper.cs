@@ -10,7 +10,7 @@ using System.Reflection;
 namespace DebugHelper
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("ShiroFC/Debug Helper 20220518")]
+    [AddComponentMenu("ShiroFC/Debug Helper 20220526")]
     public class DH : MonoBehaviour
     {
         void Start()
@@ -692,7 +692,6 @@ namespace DebugHelper
         //////////////////////////////////////////////////////////////////////
         [Tooltip("最大化Game面板快捷键")]
         public Key maxGameWindow = Key.M;
-        Assembly asm;
         /////////////////////////////////////////////////////////////////////
         [Tooltip("是否落地眩晕")]
         public bool isUnconscious = false;
