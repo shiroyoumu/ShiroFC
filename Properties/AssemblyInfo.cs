@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Shiro基础类库")]
 [assembly: AssemblyDescription("仅在做图时使用的C#类库")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("shiro's")]
+[assembly: AssemblyCompany("Shiro Tech")]
 [assembly: AssemblyProduct("ShiroFC")]
 [assembly: AssemblyCopyright("shiroyoumu")]
 [assembly: AssemblyTrademark("")]
