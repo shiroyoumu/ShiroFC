@@ -21,11 +21,26 @@ public class NodeWindowEx : EditorWindow
 		circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
 		square = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
 		Init();
-		BuildGraph(activeGraph);
 	}
-
+	void OnSelectionChange()
+	{
+		isUpdateSelection = true;
+		Repaint();
+	}
+	void Update()
+	{ 
+		if(!EditorApplication.isPlaying || (EditorApplication.isPlaying && isLiveUpdate))
+			Repaint();
+	}
 	void OnGUI()
 	{
+		if (activeGraph == null)
+		{
+			if (Selection.activeGameObject != null)
+			{
+				activeGraph = Selection.activeGameObject.GetComponentInParent<NodeGraph>();
+			}
+		}
 		GUI.skin.button.richText = true;
 		using (new EditorGUILayout.HorizontalScope())
 		{
@@ -93,10 +108,9 @@ public class NodeWindowEx : EditorWindow
                     GUILayout.Label("", GUILayout.Width(width), GUILayout.Height(height));//占位符
 					//主区域 (
 					HandleEvents();
-				
+					BuildGraph(activeGraph);
 					DrawConnections();
 					SetText();
-					Repaint();
 					PrepareRender();
 					BeginWindows();
 					Render();
@@ -282,14 +296,7 @@ public class NodeWindowEx : EditorWindow
 	{
 		if (isTrackSelection)//如果当前节点图勾选追踪选中
 		{
-			if (Selection.activeGameObject != null)
-			{
-				NodeGraph componentInParent = Selection.activeGameObject.GetComponentInParent<NodeGraph>();
-				if (componentInParent != null)
-				{
-					Init(componentInParent);
-				}
-			}
+			UpdateFromSelection();//显示选中的节点图
 		}
 		if (activeGraph == null)
 			return;
@@ -301,6 +308,24 @@ public class NodeWindowEx : EditorWindow
 			if (!first.SequenceEqual(graphNodes))//如果新收集的节点和之前的不相等
 			{
 				BuildGraph(activeGraph);//重新绘制节点图内部
+			}
+		}
+	}
+	/// <summary>
+	/// 更新选中的节点图
+	/// </summary>
+	void UpdateFromSelection()
+	{
+		if (isUpdateSelection)
+		{
+			isUpdateSelection = false;
+			if (Selection.activeGameObject != null)
+			{
+				NodeGraph componentInParent = Selection.activeGameObject.GetComponentInParent<NodeGraph>();
+				if (componentInParent != null)
+				{
+					Init(componentInParent);
+				}
 			}
 		}
 	}
@@ -345,6 +370,7 @@ public class NodeWindowEx : EditorWindow
 		if (e.type == EventType.MouseDrag && isScrolling)//中键按下拖拽
 		{
 			scrollPos -= e.delta;
+			Repaint();
 		}
 		if ((e.type == EventType.MouseUp || e.rawType == EventType.MouseUp) && e.button == 2)//中间被松开
 		{
@@ -369,7 +395,8 @@ public class NodeWindowEx : EditorWindow
 		}
 		if (isDrawFrame)
 		{
-			frameEndPos = e.mousePosition;			
+			frameEndPos = e.mousePosition;
+			Repaint();
 		}
 		if (e.type == EventType.MouseUp && e.button == 0)
 		{
@@ -414,6 +441,7 @@ public class NodeWindowEx : EditorWindow
 			}
 			if (tempOut == null && tempIn == null)
 				dragStartPos = dragEndPos = Vector2.zero;
+			Repaint();
 		}
 		DrawConnectingLines();
 		//如果鼠标松开时
@@ -484,7 +512,8 @@ public class NodeWindowEx : EditorWindow
             {
 				selectedNodes[i].nodePos = selectionDelta[i] + mousePos;
 				selectedNodes[i].UpdateLayout();
-			}			
+			}
+			Repaint();
 		}
 		if (e.type == EventType.MouseUp && e.button == 0)
 		{
@@ -668,6 +697,7 @@ public class NodeWindowEx : EditorWindow
 			{
 				isDrawFrame = false;//取消框选功能
 				scrollPos = (e.mousePosition - p - new Vector2((position.width - left) / width * w, (position.height - up) / height * h) / 2) * zoom;
+				Repaint();
 			}
 			if (e.type == EventType.MouseUp && e.button == 0)
 			{
@@ -734,6 +764,7 @@ public class NodeWindowEx : EditorWindow
 	string _temp2;
 	NodeSocketRectEx tempOut = null;
 	NodeSocketRectEx tempIn = null;
+	bool isUpdateSelection;
 
 	/// <summary>
 	/// 是否实时更新
