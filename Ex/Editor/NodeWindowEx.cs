@@ -11,13 +11,14 @@ public class NodeWindowEx : EditorWindow
 	public static NodeWindowEx Init(NodeGraph graph)
 	{
 		NodeWindowEx win = (NodeWindowEx)EditorWindow.GetWindow(typeof(NodeWindowEx));
-		win.activeGraph = graph;
+		win.pendingGraph = graph;
 		win.OnEnable();
 		return win;
 	}
 
 	void OnEnable()
 	{
+		Debug.Log("Onenable");
 		circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
 		square = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
 		Init();
@@ -34,11 +35,11 @@ public class NodeWindowEx : EditorWindow
 	}
 	void OnGUI()
 	{
-		if (activeGraph == null)
+		if (pendingGraph == null)
 		{
 			if (Selection.activeGameObject != null)
 			{
-				activeGraph = Selection.activeGameObject.GetComponentInParent<NodeGraph>();
+				pendingGraph = Selection.activeGameObject.GetComponentInParent<NodeGraph>();
 			}
 		}
 		GUI.skin.button.richText = true;
@@ -108,7 +109,14 @@ public class NodeWindowEx : EditorWindow
                     GUILayout.Label("", GUILayout.Width(width), GUILayout.Height(height));//占位符
 					//主区域 (
 					HandleEvents();
-					BuildGraph(activeGraph);
+					Debug.Log(pendingGraph + "===" + activeGraph);
+					if (pendingGraph != activeGraph || activeGraph == null)
+					{
+						if(pendingGraph != null)
+							activeGraph = pendingGraph;
+						BuildGraph(activeGraph);
+						Repaint();
+					}
 					DrawConnections();
 					SetText();
 					PrepareRender();
@@ -151,6 +159,7 @@ public class NodeWindowEx : EditorWindow
 		selectedNodes.Clear();
 		selectionDelta.Clear();
 		isDragging = isScrolling = isDrawFrame = isMapDragging = isSelectionsMoving = false;
+		activeGraph = null;
 	}
 	/// <summary>
 	/// 绘制贝塞尔曲线
@@ -324,7 +333,8 @@ public class NodeWindowEx : EditorWindow
 				NodeGraph componentInParent = Selection.activeGameObject.GetComponentInParent<NodeGraph>();
 				if (componentInParent != null)
 				{
-					Init(componentInParent);
+					//Init(componentInParent);
+					pendingGraph = componentInParent;
 				}
 			}
 		}
@@ -341,7 +351,6 @@ public class NodeWindowEx : EditorWindow
 				try//绘制节点框
 				{
 					bool drawHighlight = selectedNodes.Contains(item);//如果选中的节点等于当前节点
-
 					if (!item.RenderWindow(nodeRects.IndexOf(item), drawHighlight))//绘制节点框背景色
 					{
 						BuildGraph(activeGraph);//未渲染完成，刷新节点图
@@ -706,7 +715,10 @@ public class NodeWindowEx : EditorWindow
 		}
 	}
 
-
+	/// <summary>
+	/// 即将加载的节点图
+	/// </summary>
+	NodeGraph pendingGraph;
 	/// <summary>
 	/// 当前显示的节点图
 	/// </summary>
