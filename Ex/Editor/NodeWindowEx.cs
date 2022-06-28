@@ -112,8 +112,9 @@ public class NodeWindowEx : EditorWindow
                     scrollPos = scrollView.scrollPosition;
                     GUILayout.Label("", GUILayout.Width(width), GUILayout.Height(height));//占位符
 					//主区域 (
+					DrawGrids(gridX, gridY, gridBgColor, gridLineColor);
 					HandleEvents();
-					if (pendingGraph != activeGraph || activeGraph == null)//显示节点图
+					if (pendingGraph != activeGraph || activeGraph == null)
 					{
 						if(pendingGraph != null)
 							activeGraph = pendingGraph;
@@ -121,7 +122,7 @@ public class NodeWindowEx : EditorWindow
 							enUp = true;
 						else
 							enUp = false;
-						BuildGraph(activeGraph);
+						BuildGraph(activeGraph);//显示节点图
 						Repaint();
 					}
 					if(activeGraph == null)//设置第二组按钮
@@ -136,6 +137,9 @@ public class NodeWindowEx : EditorWindow
 					try { Render(); }catch (Exception) { }					
 					EndWindows();
 
+					DrawCurve(dragStartPos, dragEndPos, connectingColor);//绘制待定连线
+					if(enHint && isDragging)
+						DrawCurve(hintStartPos, hintEndPos, lineHintColor);//绘制提示线
 					DrawFrame();
 					SetMouseStyle();
 					//主区域 )
@@ -201,7 +205,6 @@ public class NodeWindowEx : EditorWindow
 			nodeRect.UpdateLayout();
 		}
 	}
-
 	/// <summary>
 	/// 初始化变量
 	/// </summary>
@@ -227,6 +230,32 @@ public class NodeWindowEx : EditorWindow
 			GUI.color = trueColor;
 		else
 			GUI.color = falseColor;
+	}
+	/// <summary>
+	/// 画网格
+	/// </summary>
+	/// <param name="gridX">X间距</param>
+	/// <param name="gridY">Y间距</param>
+	/// <param name="bgColor">背景色</param>
+	/// <param name="lineColor">前景色</param>
+	void DrawGrids(float gridX, float gridY, Color bgColor, Color lineColor)
+	{
+		GUI.color = bgColor;
+		GUI.DrawTexture(new Rect(0, 0, width, height), Texture2D.whiteTexture, ScaleMode.StretchToFill);
+		GUI.color = lineColor;
+		float num = 0;
+		while (num < width)//画网格的竖线
+		{
+			GUI.DrawTexture(new Rect(num, 0, 1, height), Texture2D.whiteTexture, ScaleMode.StretchToFill);
+			num += gridX;
+		}
+		num = 1;
+		while (num < height)//画网格的横线
+		{
+			GUI.DrawTexture(new Rect(0, num, width, 1), Texture2D.whiteTexture, ScaleMode.StretchToFill);
+			num += gridY;
+		}
+		GUI.color = Color.white;
 	}
 	/// <summary>
 	/// 画方块（线）
@@ -484,11 +513,11 @@ public class NodeWindowEx : EditorWindow
 			}
 			if (tempOut == null && tempIn == null)
 				dragStartPos = dragEndPos = Vector2.zero;
-			DrawCurve(dragStartPos, dragEndPos, connectingColor);
 			//绘制提示线
 			if (enHint)
-			{ 
-				Vector2 hintStartPos = Vector2.zero, hintEndPos = Vector2.zero;
+			{
+				hintStartPos = Vector2.zero;					
+				hintEndPos = Vector2.zero;
 				List<NodeSocketRectEx> allSockets = new List<NodeSocketRectEx>();
 				foreach (var item in nodeRects)
 				{
@@ -531,8 +560,7 @@ public class NodeWindowEx : EditorWindow
 						hintEndPos = allSockets[0].connectPoint;
 						hintIn = tempIn;
 						hintOut = allSockets[0];
-					}
-					DrawCurve(hintStartPos, hintEndPos, lineHintColor);
+					}					
 				}
 			}			
 			Repaint();
@@ -621,7 +649,6 @@ public class NodeWindowEx : EditorWindow
 			isSelectionsMoving = false;
 		}
 	}
-
 	/// <summary>
 	/// 更新选中的节点图
 	/// </summary>
@@ -884,6 +911,14 @@ public class NodeWindowEx : EditorWindow
 	/// </summary>
 	Vector2 dragEndPos;
 	/// <summary>
+	/// 提示线起始位置
+	/// </summary>
+	Vector2 hintStartPos;
+	/// <summary>
+	/// 提示线结束位置
+	/// </summary>
+	Vector2 hintEndPos;
+	/// <summary>
 	/// 滚动条位置
 	/// </summary>
 	Vector2 scrollPos;
@@ -927,7 +962,7 @@ public class NodeWindowEx : EditorWindow
 	static bool isMap = true;
 
 	/// <summary>
-	/// 鼠标是否正在拖拽
+	/// 鼠标是否正在连线
 	/// </summary>
 	bool isDragging;
 	/// <summary>
