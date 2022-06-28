@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.WSA;
 
 public class NodeWindowEx : EditorWindow
 {
@@ -15,10 +16,8 @@ public class NodeWindowEx : EditorWindow
 		win.OnEnable();
 		return win;
 	}
-
 	void OnEnable()
 	{
-		Debug.Log("Onenable");
 		circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
 		square = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
 		Init();
@@ -43,6 +42,7 @@ public class NodeWindowEx : EditorWindow
 			}
 		}
 		GUI.skin.button.richText = true;
+		GUI.skin.label.richText = true;
 		using (new EditorGUILayout.HorizontalScope())
 		{
 			using (new EditorGUILayout.VerticalScope())
@@ -62,24 +62,28 @@ public class NodeWindowEx : EditorWindow
 				GUILayout.Space(15);
 				GUI.color = Color.white;
 				Event e = Event.current;
+				EditorGUI.BeginDisabledGroup(!enAll);
 				if (GUILayout.Button(new GUIContent() { text = "Re.", tooltip = "刷新节点图。快捷键：" + k_refresh.ToString() }, GUILayout.Width(40), GUILayout.Height(40)) ||
 					(e.type == EventType.KeyDown && e.keyCode == k_refresh))
 				{
-					;//DoRefresh();
+					DoRefresh();
 				}
+				EditorGUI.BeginDisabledGroup(!enUp);
 				if (GUILayout.Button(new GUIContent() { text = "▲Up", tooltip = "跳转至父级" }, GUILayout.Width(40), GUILayout.Height(40)))
 				{
-					;//DoUp();
+					DoUp();
 				}
+				EditorGUI.EndDisabledGroup();
 				if (GUILayout.Button(new GUIContent() { text = "<size=20>//</size>", tooltip = "添加注释" }, GUILayout.Width(40), GUILayout.Height(40)))
 				{
-					;//DoAddComment();
+					DoAddComment();
 				}
 				if (GUILayout.Button(new GUIContent() { text = "<size=40>▦</size>", tooltip = "对齐至格点。快捷键：" + k_snap.ToString() }, GUILayout.Width(40), GUILayout.Height(40)) ||
 					(e.type == EventType.KeyDown && e.keyCode == k_snap))
 				{
-					;//DoSnap();
+					DoSnap();
 				}
+				EditorGUI.EndDisabledGroup();
 				//if (GUILayout.Button(new GUIContent() { text = "Auto", tooltip = "自动连线" }, GUILayout.Width(40), GUILayout.Height(40)))
 				//{
 				//    DoAutoConnect();
@@ -109,27 +113,36 @@ public class NodeWindowEx : EditorWindow
                     GUILayout.Label("", GUILayout.Width(width), GUILayout.Height(height));//占位符
 					//主区域 (
 					HandleEvents();
-					Debug.Log(pendingGraph + "===" + activeGraph);
-					if (pendingGraph != activeGraph || activeGraph == null)
+					if (pendingGraph != activeGraph || activeGraph == null)//显示节点图
 					{
 						if(pendingGraph != null)
 							activeGraph = pendingGraph;
+						if (activeGraph.transform.parent != null)//设置Up按钮
+							enUp = true;
+						else
+							enUp = false;
 						BuildGraph(activeGraph);
 						Repaint();
 					}
+					if(activeGraph == null)//设置第二组按钮
+						enAll = false;
+					else
+						enAll = true;
 					DrawConnections();
 					SetText();
 					PrepareRender();
-					BeginWindows();
-					Render();
+
+					BeginWindows();				
+					try { Render(); }catch (Exception) { }					
 					EndWindows();
 
 					DrawFrame();
+					SetMouseStyle();
 					//主区域 )
 				}				
 				using (new GUILayout.HorizontalScope())
 				{ 
-					EditorGUILayout.LabelField(string.Format("{0}{1}{2}{3}", mousePos, connectionState, _temp, _temp2));
+					EditorGUILayout.LabelField(string.Format("{0}{1}{2}{3}{4}", mousePos, connectionState, selectNum, _temp, _temp2));
 					SetColorByBool(isDragging, new Color(0.25f, 1, 0.25f), Color.white);
 					EditorGUILayout.LabelField(new GUIContent() {image = NodeWindowEx.square.texture }, GUILayout.Width(18), GUILayout.Width(18));//连线
 					SetColorByBool(isScrolling, new Color(0.25f, 1, 0.25f), Color.white);
@@ -144,8 +157,49 @@ public class NodeWindowEx : EditorWindow
 				}
 			}
 			GUILayout.EndArea();
+			SetNoNode();
 		}		
 		DrawMiniMap();
+	}
+	/// <summary>
+	/// 刷新节点图
+	/// </summary>
+	void DoRefresh()
+	{
+		BuildGraph(activeGraph);
+	}
+	/// <summary>
+	/// 向上
+	/// </summary>
+	void DoUp()
+	{
+		if (activeGraph.transform.parent != null)
+		{ 
+			NodeGraph ng = activeGraph.transform.parent.GetComponentInParent<NodeGraph>();
+			if (ng != null)
+				Init(ng);			
+		}
+	}
+	/// <summary>
+	/// 添加注释
+	/// </summary>
+	void DoAddComment()
+	{
+		activeGraph.gameObject.AddComponent<NodeComment>();
+		BuildGraph(activeGraph);
+	}
+	/// <summary>
+	/// 对齐网格
+	/// </summary>
+	void DoSnap()
+	{
+		foreach (NodeRectEx nodeRect in nodeRects)
+		{
+			float num = Mathf.Round(nodeRect.nodePos.x / gridX) * gridX;
+			float num2 = Mathf.Round(nodeRect.nodePos.y / gridY) * gridY + 1;
+			nodeRect.nodePos = new Vector2(num, num2);
+			nodeRect.UpdateLayout();
+		}
 	}
 
 	/// <summary>
@@ -160,6 +214,30 @@ public class NodeWindowEx : EditorWindow
 		selectionDelta.Clear();
 		isDragging = isScrolling = isDrawFrame = isMapDragging = isSelectionsMoving = false;
 		activeGraph = null;
+	}
+	/// <summary>
+	/// 通过标志位设置颜色
+	/// </summary>
+	/// <param name="f">标志位</param>
+	/// <param name="trueColor">true时颜色</param>
+	/// <param name="falseColor">false时颜色</param>
+	void SetColorByBool(bool f, Color trueColor, Color falseColor)
+	{
+		if (f)
+			GUI.color = trueColor;
+		else
+			GUI.color = falseColor;
+	}
+	/// <summary>
+	/// 画方块（线）
+	/// </summary>
+	/// <param name="rect">区域</param>
+	/// <param name="color">颜色</param>
+	void DrawLine(Rect rect, Color color)
+	{
+		GUI.color = color;
+		GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill);
+		GUI.color = Color.white;
 	}
 	/// <summary>
 	/// 绘制贝塞尔曲线
@@ -177,35 +255,6 @@ public class NodeWindowEx : EditorWindow
 			Handles.DrawBezier(startPos, endPos, startTangent, endTangent, color2, null, (i + 1) * 5);//阴影
 		}
 		Handles.DrawBezier(startPos, endPos, startTangent, endTangent, color, null, 2f);
-	}
-	/// <summary>
-	/// 绘制已连接的连线
-	/// </summary>
-	void DrawConnections()
-	{
-		for (int i = 0; i < nodeRects.Count; i++)//遍历节点图中每个节点
-		{
-			for (int j = 0; j < nodeRects[i].sockets.Count; j++)//遍历节点里的每个接口
-			{
-				NodeSocketRectEx nodeSocketRect = nodeRects[i].sockets[j];
-				NodeInput nodeInput = nodeSocketRect.socket as NodeInput;
-				if (nodeInput != null && nodeInput.GetConnectedOutput() != null)//如果是输入端，且有连接
-				{
-					NodeSocketRectEx nodeSocketRect2;
-					if (sockets2Rect.TryGetValue(nodeInput.GetConnectedOutput(), out nodeSocketRect2))//获取与该输入端相连的输出端的接口
-					{
-						if (nodeInput is NodeExit)//如果碰到了输入端（输入端为NodeExit；输出端为NodeEntry）
-						{
-							DrawCurve(nodeSocketRect.connectPoint, nodeSocketRect2.connectPoint, Color.white);//画白线
-						}
-						else//如果碰到了输出端
-						{
-							DrawCurve(nodeSocketRect2.connectPoint, nodeSocketRect.connectPoint, lineColor);//画浅蓝线
-						}
-					}
-				}
-			}
-		}
 	}
 	/// <summary>
 	/// 收集节点图中的节点
@@ -321,25 +370,6 @@ public class NodeWindowEx : EditorWindow
 		}
 	}
 	/// <summary>
-	/// 更新选中的节点图
-	/// </summary>
-	void UpdateFromSelection()
-	{
-		if (isUpdateSelection)
-		{
-			isUpdateSelection = false;
-			if (Selection.activeGameObject != null)
-			{
-				NodeGraph componentInParent = Selection.activeGameObject.GetComponentInParent<NodeGraph>();
-				if (componentInParent != null)
-				{
-					//Init(componentInParent);
-					pendingGraph = componentInParent;
-				}
-			}
-		}
-	}
-	/// <summary>
 	/// 渲染节点图
 	/// </summary>
 	void Render()
@@ -409,7 +439,9 @@ public class NodeWindowEx : EditorWindow
 		}
 		if (e.type == EventType.MouseUp && e.button == 0)
 		{
-			DoFramedNode();
+			if(isDrawFrame)
+				DoFramedNode();
+			frameStartPos = frameEndPos = Vector2.zero;
 			isDrawFrame = false;
 		}
 		//处理连线
@@ -436,23 +468,75 @@ public class NodeWindowEx : EditorWindow
 			isDragging = true;
 			e.Use();
 		}
+		NodeSocketRectEx hintIn = null, hintOut = null;
 		if (isDragging)//拖拽时绘制连接中的线段
 		{
-			if (tempOut != null && tempIn == null)
+			//绘制待定的连线
+			if (tempOut != null && tempIn == null)//先点输入
 			{
 				dragStartPos = e.mousePosition;
 				dragEndPos = tempOut.connectPoint;
 			}
-			if (tempIn != null && tempOut == null)
+			if (tempIn != null && tempOut == null)//先点输出
 			{
 				dragStartPos = tempIn.connectPoint;
 				dragEndPos = e.mousePosition;
 			}
 			if (tempOut == null && tempIn == null)
 				dragStartPos = dragEndPos = Vector2.zero;
+			DrawCurve(dragStartPos, dragEndPos, connectingColor);
+			//绘制提示线
+			if (enHint)
+			{ 
+				Vector2 hintStartPos = Vector2.zero, hintEndPos = Vector2.zero;
+				List<NodeSocketRectEx> allSockets = new List<NodeSocketRectEx>();
+				foreach (var item in nodeRects)
+				{
+					foreach (var item2 in item.sockets)
+					{
+						if (tempOut != null && tempIn == null)//先点输入
+						{
+							if (item2.socket.GetType() == typeof(NodeOutput))
+							{ 
+								allSockets.Add(item2);
+							}
+						}
+						if (tempIn != null && tempOut == null)//先点输出
+						{
+							if (item2.socket.GetType() == typeof(NodeInput))
+							{
+								allSockets.Add(item2);
+							}
+						}
+					}
+				}
+				allSockets.Sort((x, y) =>
+				{
+					float m1 = (x.connectPoint - mousePos).magnitude;
+					float m2 = (y.connectPoint - mousePos).magnitude;
+					return m1.CompareTo(m2);
+				});
+				if ((allSockets[0].connectPoint - mousePos).magnitude < 50)
+				{
+					if (tempOut != null && tempIn == null)//先点输入
+					{
+						hintStartPos = allSockets[0].connectPoint;
+						hintEndPos = tempOut.connectPoint;
+						hintIn = allSockets[0];
+						hintOut = tempOut;
+					}
+					if (tempIn != null && tempOut == null)//先点输出
+					{
+						hintStartPos = tempIn.connectPoint;
+						hintEndPos = allSockets[0].connectPoint;
+						hintIn = tempIn;
+						hintOut = allSockets[0];
+					}
+					DrawCurve(hintStartPos, hintEndPos, lineHintColor);
+				}			
+			}			
 			Repaint();
-		}
-		DrawConnectingLines();
+		}		
 		//如果鼠标松开时
 		if (e.type == EventType.MouseUp && e.button == 0)
 		{
@@ -484,12 +568,16 @@ public class NodeWindowEx : EditorWindow
 			}
 			else//没在接口上
 			{
-				tempIn = tempOut = null;//清空
+				if (hintIn != null && hintOut != null)
+				{
+					tempIn = hintIn;
+					tempOut = hintOut;
+				}
 			}
+			DoConnect();
 			dragStartPos = dragEndPos = Vector2.zero;
 			isDragging = false;
-		}
-		DoConnect();
+		}		
 		//统一移动
 		if (e.type == EventType.MouseDown && e.button == 0)
 		{
@@ -530,30 +618,53 @@ public class NodeWindowEx : EditorWindow
 		}
 	}
 
-
 	/// <summary>
-	/// 通过标志位设置颜色
+	/// 更新选中的节点图
 	/// </summary>
-	/// <param name="f">标志位</param>
-	/// <param name="trueColor">true时颜色</param>
-	/// <param name="falseColor">false时颜色</param>
-	void SetColorByBool(bool f, Color trueColor, Color falseColor)
+	void UpdateFromSelection()
 	{
-		if (f)
-			GUI.color = trueColor;
-		else
-			GUI.color = falseColor;
+		if (isUpdateSelection)
+		{
+			isUpdateSelection = false;
+			if (Selection.activeGameObject != null)
+			{
+				NodeGraph componentInParent = Selection.activeGameObject.GetComponentInParent<NodeGraph>();
+				if (componentInParent != null)
+				{
+					//Init(componentInParent);
+					pendingGraph = componentInParent;
+				}
+			}
+		}
 	}
 	/// <summary>
-	/// 画方块（线）
+	/// 绘制已连接的连线
 	/// </summary>
-	/// <param name="rect">区域</param>
-	/// <param name="color">颜色</param>
-	void DrawLine(Rect rect, Color color)
+	void DrawConnections()
 	{
-		GUI.color = color;
-		GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill);
-		GUI.color = Color.white;
+		for (int i = 0; i < nodeRects.Count; i++)//遍历节点图中每个节点
+		{
+			for (int j = 0; j < nodeRects[i].sockets.Count; j++)//遍历节点里的每个接口
+			{
+				NodeSocketRectEx nodeSocketRect = nodeRects[i].sockets[j];
+				NodeInput nodeInput = nodeSocketRect.socket as NodeInput;
+				if (nodeInput != null && nodeInput.GetConnectedOutput() != null)//如果是输入端，且有连接
+				{
+					NodeSocketRectEx nodeSocketRect2;
+					if (sockets2Rect.TryGetValue(nodeInput.GetConnectedOutput(), out nodeSocketRect2))//获取与该输入端相连的输出端的接口
+					{
+						if (nodeInput is NodeExit)//如果碰到了输入端（输入端为NodeExit；输出端为NodeEntry）
+						{
+							DrawCurve(nodeSocketRect.connectPoint, nodeSocketRect2.connectPoint, Color.white);//画白线
+						}
+						else//如果碰到了输出端
+						{
+							DrawCurve(nodeSocketRect2.connectPoint, nodeSocketRect.connectPoint, lineColor);//画浅蓝线
+						}
+					}
+				}
+			}
+		}
 	}
 	/// <summary>
 	/// 绘制框选框
@@ -598,22 +709,10 @@ public class NodeWindowEx : EditorWindow
 		{
 			selectedNodes.AddRange(temp);
 			selectedNodes = selectedNodes.Distinct().ToList();//去重
-			Debug.Log(selectedNodes.Count);
 		}
 		else if (isDrawFrame)
 		{
 			selectedNodes.Clear();
-		}
-	}
-
-	/// <summary>
-	/// 绘制正在连接的线
-	/// </summary>
-	void DrawConnectingLines()
-	{
-		if (isDragging)
-		{
-			DrawCurve(dragStartPos, dragEndPos, connectingColor);
 		}
 	}
 	/// <summary>
@@ -630,6 +729,10 @@ public class NodeWindowEx : EditorWindow
 			connectionState = "";
 			connectionState = "";
 		}
+		if (selectedNodes.Count > 0)
+			selectNum = ", 选中了" + selectedNodes.Count + "个节点";
+		else
+			selectNum = "";
 	}
 	/// <summary>
 	/// 连接接口
@@ -714,6 +817,30 @@ public class NodeWindowEx : EditorWindow
 			}
 		}
 	}
+	/// <summary>
+	/// 设置不同操作时鼠标样式
+	/// </summary>
+	void SetMouseStyle()
+	{
+		if (isScrolling)
+			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Pan);
+		if (isDragging)
+			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
+		if (isSelectionsMoving)
+			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.MoveArrow);
+		if (isMapDragging)
+			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Zoom);
+	}
+	/// <summary>
+	/// 设置无节点字
+	/// </summary>
+	void SetNoNode()
+	{
+		if (nodeRects.Count <= 0)
+		{
+			GUI.Label(new Rect(Vector2.zero, new Vector2(150, 60)) { center = new Rect(50, 0, position.width - 50, position.height).center }, new GUIContent() { text = "<size=40><color=red>无节点</color></size>" });
+		}
+	}
 
 	/// <summary>
 	/// 即将加载的节点图
@@ -738,7 +865,7 @@ public class NodeWindowEx : EditorWindow
 	/// <summary>
 	/// 框选中的节点们
 	/// </summary>
-	List<NodeRectEx> selectedNodes = new List<NodeRectEx>();
+	public static List<NodeRectEx> selectedNodes = new List<NodeRectEx>();
 	/// <summary>
 	/// 选中节点框相对偏移量
 	/// </summary>
@@ -772,6 +899,10 @@ public class NodeWindowEx : EditorWindow
 	/// 接口连接状态（显示用）
 	/// </summary>
 	string connectionState;
+	/// <summary>
+	/// 当前选中的节点数（显示用）
+	/// </summary>
+	string selectNum;
 	string _temp;
 	string _temp2;
 	NodeSocketRectEx tempOut = null;
@@ -813,6 +944,15 @@ public class NodeWindowEx : EditorWindow
 	bool isSelectionsMoving;
 
 	/// <summary>
+	/// Up按钮是否启用
+	/// </summary>
+	bool enUp;
+	/// <summary>
+	/// 左侧第二组按钮是否启用
+	/// </summary>
+	bool enAll;
+
+	/// <summary>
 	/// 接口小圈圈
 	/// </summary>
 	public static Sprite circle;
@@ -852,6 +992,15 @@ public class NodeWindowEx : EditorWindow
 	/// 正在连接的连接线颜色
 	/// </summary>
 	public static Color connectingColor = Color.white;
+	/// <summary>
+	/// 是否开启连线提示
+	/// </summary>
+	public static bool enHint = true;
+	/// <summary>
+	/// 提示连接线颜色
+	/// </summary>
+	public static Color lineHintColor = Color.red;
+
 	/// <summary>
 	/// 节点图节点颜色
 	/// </summary>
@@ -1058,6 +1207,8 @@ public class NodeRectEx
 			if (GUI.Button(new Rect(8f, 16f, 102f, 20f), node.name))//绘制按钮
 			{
 				Selection.activeGameObject = node.gameObject;
+				NodeWindowEx.selectedNodes.Add(this);
+				NodeWindowEx.selectedNodes = NodeWindowEx.selectedNodes.Distinct().ToList();//去重
 			}
 			if (GUI.Button(new Rect(110f, 16f, 32f, 20f), "▼"))//绘制↓按钮
 			{
@@ -1077,6 +1228,8 @@ public class NodeRectEx
 		else if (GUI.Button(new Rect(8f, 16f, 134f, 20f), node.name))//如果是灰色节点和红色节点
 		{
 			Selection.activeGameObject = node.gameObject;
+			NodeWindowEx.selectedNodes.Add(this);
+			NodeWindowEx.selectedNodes = NodeWindowEx.selectedNodes.Distinct().ToList();//去重
 		}
 		GUI.skin.label.alignment = TextAnchor.UpperLeft;
 		GUI.color = Color.white;
