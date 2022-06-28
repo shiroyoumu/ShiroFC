@@ -533,7 +533,7 @@ public class NodeWindowEx : EditorWindow
 						hintOut = allSockets[0];
 					}
 					DrawCurve(hintStartPos, hintEndPos, lineHintColor);
-				}			
+				}
 			}			
 			Repaint();
 		}		
@@ -572,6 +572,10 @@ public class NodeWindowEx : EditorWindow
 				{
 					tempIn = hintIn;
 					tempOut = hintOut;
+				}
+				else
+				{
+					tempIn = tempOut = null;
 				}
 			}
 			DoConnect();
