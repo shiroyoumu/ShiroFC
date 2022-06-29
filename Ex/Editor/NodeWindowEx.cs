@@ -118,7 +118,7 @@ public class NodeWindowEx : EditorWindow
 					{
 						if(pendingGraph != null)
 							activeGraph = pendingGraph;
-						if (activeGraph.transform.parent != null)//设置Up按钮
+						if (activeGraph != null && activeGraph.transform.parent != null)//设置Up按钮
 							enUp = true;
 						else
 							enUp = false;
@@ -136,10 +136,13 @@ public class NodeWindowEx : EditorWindow
 					BeginWindows();				
 					try { Render(); }catch (Exception) { }					
 					EndWindows();
-
-					DrawCurve(dragStartPos, dragEndPos, connectingColor);//绘制待定连线
-					if(enHint && isDragging)
-						DrawCurve(hintStartPos, hintEndPos, lineHintColor);//绘制提示线
+										
+					if (isDragging)
+					{ 
+						DrawCurve(dragStartPos, dragEndPos, connectingColor);//绘制待定连线
+						if(enHint)
+							DrawCurve(hintStartPos, hintEndPos, lineHintColor);//绘制提示线
+					}						
 					DrawFrame();
 					SetMouseStyle();
 					//主区域 )
