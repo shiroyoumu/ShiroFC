@@ -21,6 +21,28 @@ public class NodeWindowEx : EditorWindow
 		circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
 		square = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
 		Init();
+		try//读取按钮状态
+		{			
+			isLiveUpdate = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isLiveUpdate"));
+			isTrackSelection = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isTrackSelection"));
+			isMap = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isMap"));
+		} catch (Exception) { }
+	}
+	void OnLostFocus()
+	{
+		//失焦保存按钮状态
+		EditorUserSettings.SetConfigValue("isLiveUpdate", isLiveUpdate.ToString());
+		EditorUserSettings.SetConfigValue("isTrackSelection", isTrackSelection.ToString());
+		EditorUserSettings.SetConfigValue("isMap", isMap.ToString());
+	}
+	void OnFocus()
+	{
+		try//得焦读取按钮状态
+		{			
+			isLiveUpdate = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isLiveUpdate"));
+			isTrackSelection = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isTrackSelection"));
+			isMap = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isMap"));
+		} catch (Exception) { }
 	}
 	void OnSelectionChange()
 	{
