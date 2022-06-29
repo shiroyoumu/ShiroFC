@@ -136,6 +136,7 @@ public class NodeWindowEx : EditorWindow
 					//主区域 (
 					DrawGrids(gridX, gridY, gridBgColor, gridLineColor);
 					HandleEvents();
+					ShowRightMenu();
 					if (pendingGraph != activeGraph || activeGraph == null)
 					{
 						if(pendingGraph != null)
@@ -897,6 +898,105 @@ public class NodeWindowEx : EditorWindow
 			GUI.Label(new Rect(Vector2.zero, new Vector2(150, 60)) { center = new Rect(50, 0, position.width - 50, position.height).center }, new GUIContent() { text = "<size=40><color=red>无节点</color></size>" });
 		}
 	}
+	/// <summary>
+	/// 打开右键菜单
+	/// </summary>
+	void ShowRightMenu()
+	{
+		Event e = Event.current;
+		if (e.type == EventType.MouseDown && e.button == 1)
+		{
+			GenericMenu gm = new GenericMenu();
+			gm.AddItem(new GUIContent("添加节点/Net Signal"), false, HandleMenu, typeof(NetSignal));
+			gm.AddItem(new GUIContent("添加节点/Signal Unity Event"), false, HandleMenu, typeof(SignalUnityEvent));
+			gm.AddItem(new GUIContent("添加节点/SignalCombine"), false, HandleMenu, typeof(HumanAPI.SignalCombine));
+			gm.AddItem(new GUIContent("添加节点/SignalTime"), false, HandleMenu, typeof(SignalTime));
+			gm.AddItem(new GUIContent("添加节点/SignalMathInRange"), false, HandleMenu, typeof(SignalMathInRange));
+
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Accumulate"), false, HandleMenu, typeof(SignalAccumulate));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Distance"), false, HandleMenu, typeof(SignalDistance));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Hold"), false, HandleMenu, typeof(SignalHold));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Latch"), false, HandleMenu, typeof(SignalLatch));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Once"), false, HandleMenu, typeof(SignalOnce));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Set Scale"), false, HandleMenu, typeof(SignalSetScale));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Set Rotation"), false, HandleMenu, typeof(SignalSetRotation));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Set Translation"), false, HandleMenu, typeof(SignalSetTranslation));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Teleport"), false, HandleMenu, typeof(SignalTeleport));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Toggle"), false, HandleMenu, typeof(SignalToggle));
+			gm.AddItem(new GUIContent("添加节点/Signal/SignalSmooth"), false, HandleMenu, typeof(SignalSmooth));
+			gm.AddItem(new GUIContent("添加节点/Signal/SignalCycler"), false, HandleMenu, typeof(SignalCycler));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Counter"), false, HandleMenu, typeof(SignalCounter));
+			gm.AddItem(new GUIContent("添加节点/Signal/SignalAmbientLight"), false, HandleMenu, typeof(SignalAmbientLight));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Select"), false, HandleMenu, typeof(SignalSelect));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Gravity"), false, HandleMenu, typeof(SignalGravity));
+			gm.AddItem(new GUIContent("添加节点/Signal/Signal Release"), false, HandleMenu, typeof(SignalRelease));
+
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathAbs"), false, HandleMenu, typeof(SignalMathAbs));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathAdd"), false, HandleMenu, typeof(SignalMathAdd));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathClamp"), false, HandleMenu, typeof(SignalMathClamp));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathDiv"), false, HandleMenu, typeof(SignalMathDiv));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathFract"), false, HandleMenu, typeof(SignalMathFract));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathInverseLerp"), false, HandleMenu, typeof(SignalMathInverseLerp));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathInvert"), false, HandleMenu, typeof(SignalMathInvert));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathLerp"), false, HandleMenu, typeof(SignalMathLerp));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathMul"), false, HandleMenu, typeof(SignalMathMul));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathNegate"), false, HandleMenu, typeof(SignalMathNegate));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathSin"), false, HandleMenu, typeof(SignalMathSin));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathThreshold"), false, HandleMenu, typeof(SignalMathThreshold));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathCompare"), false, HandleMenu, typeof(SignalMathCompare));
+			gm.AddItem(new GUIContent("添加节点/Math/Signal Math Constant"), false, HandleMenu, typeof(SignalMathConstant));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathModulo"), false, HandleMenu, typeof(SignalMathModulo));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathRandom"), false, HandleMenu, typeof(SignalMathRandom));
+			gm.AddItem(new GUIContent("添加节点/Math/SignalMathRound"), false, HandleMenu, typeof(SignalMathRound));
+
+			gm.AddItem(new GUIContent("添加节点/Lerp/Lerp Emission"), false, HandleMenu, typeof(LerpEmission));
+			gm.AddItem(new GUIContent("添加节点/Lerp/Lerp Light Intensity"), false, HandleMenu, typeof(LerpLightIntensity));
+			gm.AddItem(new GUIContent("添加节点/Lerp/Lerp Particles"), false, HandleMenu, typeof(LerpParticles));
+			gm.AddItem(new GUIContent("添加节点/Lerp/Signal Lerp Volume"), false, HandleMenu, typeof(SignalLerpVolume));
+
+			gm.AddItem(new GUIContent("添加节点/Trigger/Trigger Volume"), false, HandleMenu, typeof(TriggerVolume));
+			gm.AddItem(new GUIContent("添加节点/Trigger/Collider Label Trigger Volume"), false, HandleMenu, typeof(ColliderLabelTriggerVolume));
+			gm.AddItem(new GUIContent("添加节点/Trigger/Collision By Layer Sensor"), false, HandleMenu, typeof(CollisionByLayerSensor));
+			gm.AddItem(new GUIContent("添加节点/Trigger/Collision By Tag Sensor"), false, HandleMenu, typeof(CollisionByTagSensor));
+			gm.AddItem(new GUIContent("添加节点/Trigger/Grab Sensor"), false, HandleMenu, typeof(GrabSensor));
+			gm.AddSeparator("");
+			gm.AddItem(new GUIContent("刷新"), false, DoRefresh);
+			gm.AddItem(new GUIContent("对齐网格"), false, DoSnap);
+			gm.AddSeparator("");
+			gm.AddItem(new GUIContent("切换小地图"), isMap, () => isMap = !isMap);
+			gm.ShowAsContext();
+		}
+	}
+	/// <summary>
+	/// 处理菜单事件
+	/// </summary>
+	/// <param name="id">脚本</param>
+	void HandleMenu(object script)
+	{
+		GameObject tar = null;
+		try
+		{
+			if (!(script is NetSignal))
+			{
+				switch (addLocation)
+				{
+					case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
+					case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
+				}
+				Undo.AddComponent(tar, (Type)script);
+			}
+			else
+			{
+				switch (addNetLocation)
+				{
+					case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
+					case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
+				}
+				Undo.AddComponent(tar, (Type)script);
+			}
+		}
+		catch (NullReferenceException) { return; }
+	}
 
 	/// <summary>
 	/// 即将加载的节点图
@@ -1116,7 +1216,6 @@ public class NodeWindowEx : EditorWindow
 	public enum NodeAddLocation
 	{
 		OnRoot,
-		OnNode,
 		OnSelection
 	}
 }
