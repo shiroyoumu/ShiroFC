@@ -21,6 +21,7 @@ public class NodeWindowEx : EditorWindow
 		circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
 		square = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
 		Init();
+		DoRead();//读取配置文件
 		try//读取按钮状态
 		{			
 			isLiveUpdate = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isLiveUpdate"));
@@ -119,7 +120,7 @@ public class NodeWindowEx : EditorWindow
 				GUI.color = Color.white;
 				if (GUILayout.Button(new GUIContent() { text = "Conf", tooltip = "节点图设置" }, GUILayout.Width(40), GUILayout.Height(40)))
 				{
-					;//ConfWindow.Init();
+					ConfWindow.Init(this);
 				}
 				GUILayout.Space(5);	
 			}		
@@ -138,6 +139,7 @@ public class NodeWindowEx : EditorWindow
 					HandleEvents();
 					ShowNodeProperty();
 					ShowRightMenu();
+					HandleDelete();
 					if (pendingGraph != activeGraph || activeGraph == null)
 					{
 						if(pendingGraph != null)
@@ -1034,12 +1036,62 @@ public class NodeWindowEx : EditorWindow
 		}
 		catch (NullReferenceException) { return; }
 	}
-
+	/// <summary>
+	/// 删除节点处理
+	/// </summary>
+	void HandleDelete()
+	{
+		Event e = Event.current;
+		if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Delete)
+		{
+			foreach (var item in selectedNodes)
+			{
+				Undo.DestroyObjectImmediate(item.node);
+			}
+			selectedNodes.Clear();
+		}
+	}
+	/// <summary>
+	/// 读取配置
+	/// </summary>
+	void DoRead()
+	{     
+		NodeWindowSettings nws = AssetDatabase.LoadAssetAtPath<NodeWindowSettings>("Assets/NodeWindowExConfig.asset");
+		if (nws == null)
+		{
+			nws = CreateInstance<NodeWindowSettings>();
+			nws.InitColor();
+			AssetDatabase.CreateAsset(nws, "Assets/NodeWindowExConfig.asset");
+		}
+		width = nws.width;
+		height = nws.height;
+		gridX = nws.gridX;
+		gridY = nws.gridY;
+		gridBgColor = nws.gridBgColor;
+		gridLineColor = nws.gridLineColor;
+		lineColor = nws.lineColor;
+		lineHighlightColor = nws.lineHighlightColor;
+		connectingColor = nws.connectingColor;
+		enHint = nws.enHint;
+		lineHintColor = nws.lineHintColor;
+		nodeGraphColor = nws.nodeGraphColor;
+		nodeGraphIOColor = nws.nodeGraphIOColor;
+		nodeCommentColor = nws.nodeCommentColor;
+		nodeHighlightColor = nws.nodeHighlightColor;
+		minCircleValue = nws.minCircleValue;
+		maxCircleValue = nws.maxCircleValue;
+		circleColor = nws.circleColor;
+		k_refresh = nws.k_refresh;
+		k_snap = nws.k_snap;
+		isCloseOnLostFocus = nws.isCloseOnLostFocus;
+		addLocation = nws.addLocation;
+		addNetLocation = nws.addNetLocation;
+	}
 
 	/// <summary>
 	/// 即将加载的节点图
 	/// </summary>
-	NodeGraph pendingGraph;
+	public NodeGraph pendingGraph;
 	/// <summary>
 	/// 当前显示的节点图
 	/// </summary>
@@ -1159,8 +1211,6 @@ public class NodeWindowEx : EditorWindow
 	/// </summary>
 	public static Sprite circle;
 	public static Sprite square;
-
-
 	/////////////////
 	/// <summary>
 	/// 节点图宽度
@@ -1842,4 +1892,480 @@ public class NodePropertyWindow : EditorWindow
 	/// </summary>
 	public static bool isSame;
 	Vector2 scrollPos;
+}
+
+/// <summary>
+/// 配置文件
+/// </summary>
+public class NodeWindowSettings : ScriptableObject
+{
+	[Range(1650, 10000)]
+	public float width = 3200;
+	[Range(1100, 10000)]
+	public float height = 2400;
+	[Range(16, 256)]
+	public float gridX = 32;
+	[Range(16, 256)]
+	public float gridY = 32;
+	public Color gridBgColor = new Color(0.75f, 0.75f, 0.75f);
+	public Color gridLineColor = new Color(0.65f, 0.65f, 0.65f);
+	public Color lineColor = new Color(0.7f, 0.7f, 1f);
+	public Color lineHighlightColor = new Color(1f, 0.5f, 0);
+	public Color connectingColor = Color.white;
+	public bool enHint = true;
+	public Color lineHintColor = new Color(1f, 0, 0, 0.5f);
+	public Color nodeGraphColor = new Color(1f, 0.9f, 0.7f);
+	public Color nodeGraphIOColor = new Color(1f, 0.7f, 0.7f);
+	public Color nodeCommentColor = Color.green;
+	public Color nodeHighlightColor = new Color(1f, 0.5f, 0.3f, 0.5f);
+	public float minCircleValue = 0.4999f;
+	public float maxCircleValue = 0.5f;
+	public Gradient circleColor = new Gradient();
+	public KeyCode k_refresh = KeyCode.R;
+	public KeyCode k_snap = KeyCode.Q;
+	public bool isCloseOnLostFocus = true;
+	public NodeWindowEx.NodeAddLocation addLocation = NodeWindowEx.NodeAddLocation.OnRoot;
+	public NodeWindowEx.NodeAddLocation addNetLocation = NodeWindowEx.NodeAddLocation.OnRoot;
+
+	public void InitColor()
+	{
+		GradientColorKey[] colorKey = new GradientColorKey[2];
+		colorKey[0].color = Color.white;
+		colorKey[0].time = 0.0f;
+		colorKey[1].color = Color.green;
+		colorKey[1].time = 1.0f;
+		GradientAlphaKey[] alphaKey = new GradientAlphaKey[1];
+		alphaKey[0].alpha = 1.0f;
+		alphaKey[0].time = 1f;
+		circleColor.SetKeys(colorKey, alphaKey);
+	}
+}
+
+/// <summary>
+/// 节点图设置窗口类
+/// </summary>
+public class ConfWindow : EditorWindow
+{
+	/*加入配置时修改： 
+	DoSave，GetValueFromAsset，ResetDefault，该类新增字段，NodeWindowSettings新增字段
+	NodeWindowEx新增字段，OnGUI*/
+	public static void Init(NodeWindowEx winEx)
+	{
+		nodeWin = winEx;
+		ConfWindow win = (ConfWindow)EditorWindow.GetWindow(typeof(ConfWindow));
+		win.titleContent = new GUIContent("节点图设置");
+		win.minSize = new Vector2(800, 580);
+		win.OnEnable();
+		win.Show();
+	}
+	static NodeWindowEx nodeWin;
+	void OnEnable()
+	{
+		GetValueFromAsset();
+	}
+	void OnDestroy()
+	{
+		NodeWindowEx.Init(nodeWin.activeGraph);
+	}
+	void OnGUI()
+	{
+		using (new EditorGUILayout.HorizontalScope())
+		{
+			GUILayout.Space(15);
+			using (new EditorGUILayout.VerticalScope(GUILayout.Width(240), GUILayout.Height(520)))
+			{
+				GUILayout.Space(15);
+				using (var scrlloView = new EditorGUILayout.ScrollViewScope(scrollPos))
+				{
+					scrollPos = scrlloView.scrollPosition;
+					EditorGUILayout.LabelField("节点图宽度");
+					width = EditorGUILayout.Slider(width, 1650, 10000);
+					EditorGUILayout.LabelField("节点图高度");
+					height = EditorGUILayout.Slider(height, 1100, 10000);
+					EditorGUILayout.LabelField("节点图背景网格宽度");
+					gridX = EditorGUILayout.Slider(gridX, 16, 256);
+					EditorGUILayout.LabelField("节点图背景网格高度");
+					gridY = EditorGUILayout.Slider(gridY, 16, 256);
+					EditorGUILayout.LabelField("节点图网格背景色");
+					gridBgColor = EditorGUILayout.ColorField(gridBgColor);
+					EditorGUILayout.LabelField("节点图网格颜色");
+					gridLineColor = EditorGUILayout.ColorField(gridLineColor);
+					EditorGUILayout.LabelField("节点连接线颜色");
+					lineColor = EditorGUILayout.ColorField(lineColor);
+					EditorGUILayout.LabelField("高亮连接线颜色");
+					lineHighlightColor = EditorGUILayout.ColorField(lineHighlightColor);
+					EditorGUILayout.LabelField("正在连接的连接线颜色");
+					connectingColor = EditorGUILayout.ColorField(connectingColor);
+					enHint = EditorGUILayout.Toggle(new GUIContent() { text = "开启连线提示" }, enHint);
+					EditorGUILayout.LabelField("提示连线颜色");
+					lineHintColor = EditorGUILayout.ColorField(lineHintColor);
+					EditorGUILayout.LabelField("节点图节点颜色");
+					nodeGraphColor = EditorGUILayout.ColorField(nodeGraphColor);
+					EditorGUILayout.LabelField("节点图I/O节点颜色");
+					nodeGraphIOColor = EditorGUILayout.ColorField(nodeGraphIOColor);
+					EditorGUILayout.LabelField("节点图注释节点颜色");
+					nodeCommentColor = EditorGUILayout.ColorField(nodeCommentColor);
+					EditorGUILayout.LabelField("节点图高亮框颜色");
+					nodeHighlightColor = EditorGUILayout.ColorField(nodeHighlightColor);
+					EditorGUILayout.LabelField("节点接口颜色范围");
+					using (new EditorGUILayout.HorizontalScope())
+					{
+						minCircleValue = EditorGUILayout.FloatField(minCircleValue, GUILayout.Width(50));
+						GUILayout.FlexibleSpace();
+						maxCircleValue = EditorGUILayout.FloatField(maxCircleValue, GUILayout.Width(50));
+					}
+					EditorGUILayout.MinMaxSlider(ref minCircleValue, ref maxCircleValue, -50, 50);
+					EditorGUILayout.LabelField("节点接口颜色");
+					serializedObject.Update();
+					circleColorProperty = serializedObject.FindProperty("circleColor");
+					EditorGUILayout.PropertyField(circleColorProperty, new GUIContent() { text = "" });
+					serializedObject.ApplyModifiedProperties();
+					EditorGUILayout.LabelField("刷新节点图快捷键");
+					k_refresh = (KeyCode)EditorGUILayout.EnumPopup("", k_refresh);
+					EditorGUILayout.LabelField("对齐网格快捷键");
+					k_snap = (KeyCode)EditorGUILayout.EnumPopup("", k_snap);
+					isCloseOnLostFocus = EditorGUILayout.Toggle(new GUIContent() { text = "节点属性窗口是否失焦关闭", tooltip = "开启失焦关闭会导致节点颜色无法在节点图中修改，但其仍然可以在Inspector面板中修改" }, isCloseOnLostFocus);
+					EditorGUILayout.LabelField("添加节点至：");
+					if (EditorGUILayout.DropdownButton(new GUIContent() { text = text }, FocusType.Keyboard))
+					{
+						ShowMenu(1);
+					}
+					EditorGUILayout.LabelField("添加NetSignal至：");
+					if (EditorGUILayout.DropdownButton(new GUIContent() { text = text2 }, FocusType.Keyboard))
+					{
+						ShowMenu(2);
+					}
+				}
+			}
+			GUILayout.Space(15);//中间分界
+			using (new EditorGUILayout.VerticalScope(GUILayout.Width(510)))
+			{
+				GUILayout.Space(12);
+				EditorGUILayout.LabelField("效果预览");
+				EditorGUILayout.LabelField("", GUILayout.Width(510), GUILayout.Height(500));
+				GUILayout.BeginArea(new Rect(275, 35, 510, 500));
+				PreviewArea();
+				BeginWindows();
+				DrawNodes();
+				GUI.color = Color.white;
+				DrawHighlight(r3);
+				DrawCurve(r2.position + new Vector2(150, 60), r3.position + new Vector2(0, 44), lineHighlightColor);
+				DrawCurve(r4.position + new Vector2(150, 44), new Vector2(300, 350), connectingColor);
+				DrawCurve(r4.position + new Vector2(150, 44), r2.position + new Vector2(0, 44), lineColor);
+				if (enHint)
+					DrawCurve(r4.position + new Vector2(150, 44), r3.position + new Vector2(0, 44), lineHintColor);
+				EndWindows();
+				EditorGUI.LabelField(new Rect(4, 4, 35, 16), new GUIContent() { text = "信号值" });
+				value = EditorGUI.Slider(new Rect(54, 4, 150, 16), value, 0, 1);
+				GUILayout.EndArea();
+				GUILayout.Space(10);
+				using (new EditorGUILayout.HorizontalScope())
+				{
+					GUILayout.FlexibleSpace();
+					if (GUILayout.Button("恢复默认", GUILayout.Width(100), GUILayout.Height(25)))
+					{
+						ResetDefault();
+					}
+					GUILayout.Space(50);
+					if (GUILayout.Button("保存", GUILayout.Width(100), GUILayout.Height(25)))
+					{
+						DoSave();
+						Close();
+					}
+					if (GUILayout.Button("放弃修改", GUILayout.Width(100), GUILayout.Height(25)))
+					{
+						if (EditorUtility.DisplayDialog("退出设置", "是否放弃修改？", "放弃修改", "取消"))
+						{
+							Close();
+						}
+					}
+					GUILayout.Space(10);
+				}
+			}
+		}
+		EditorGUI.LabelField(new Rect(0, position.height - 16, 200, 16), "V20220630 ©SHIROTECH", new GUIStyle() { normal = new GUIStyleState() { textColor = new Color(0.5f, 0.5f, 0.5f) } });
+	}
+	void DrawNodes()
+	{
+		GUI.color = nodeCommentColor;
+		r1 = GUI.Window(1, r1, Render, "NodeComment");
+		r1.position = new Vector2(Mathf.Clamp(r1.x, 2, 350), Mathf.Clamp(r1.y, 2, 445));
+		GUI.color = nodeGraphColor;
+		r2 = GUI.Window(2, r2, Render, "NodeGraph");
+		r2.position = new Vector2(Mathf.Clamp(r2.x, 2, 350), Mathf.Clamp(r2.y, 2, 408));
+		GUI.color = nodeGraphIOColor;
+		r3 = GUI.Window(3, r3, Render, "NodeGraph");
+		r3.position = new Vector2(Mathf.Clamp(r3.x, 2, 350), Mathf.Clamp(r3.y, 2, 424));
+		r4 = GUI.Window(4, r4, Render, "NodeGraph");
+		r4.position = new Vector2(Mathf.Clamp(r4.x, 2, 350), Mathf.Clamp(r4.y, 2, 424));
+	}
+	void Render(int id)
+	{
+		switch (id)
+		{
+			case 1:
+				GUI.color = nodeCommentColor;
+				GUI.TextArea(new Rect(8, 16, 133, 15), "This is a Comment");
+				break;
+			case 2:
+				GUI.color = Color.gray;
+				GUI.Button(new Rect(8, 16, 102, 20), "SHIROTECH");
+				GUI.Button(new Rect(110, 16, 32, 20), "▼");
+				GUI.color = circleColor.Evaluate(value);
+				GUI.DrawTextureWithTexCoords(new Rect(-1, 35, 18, 18), NodeWindowEx.circle.texture, new Rect(0, 0, 1, 1));
+				GUI.Label(new Rect(16, 36, 134, 16), "input:" + value.ToString("0.###"));
+				GUI.DrawTextureWithTexCoords(new Rect(133, 51, 18, 18), NodeWindowEx.circle.texture, new Rect(0, 0, 1, 1));
+				GUI.skin.label.alignment = TextAnchor.UpperRight;
+				GUI.Label(new Rect(0, 52, 134, 16), "output:" + value.ToString("0.###"));
+				GUI.skin.label.alignment = TextAnchor.UpperLeft;
+				break;
+			case 3:
+				GUI.color = Color.gray;
+				GUI.Button(new Rect(8, 16, 134, 20), "SHIROTECH");
+				GUI.color = circleColor.Evaluate(value);
+				GUI.DrawTextureWithTexCoords(new Rect(-1, 35, 18, 18), NodeWindowEx.circle.texture, new Rect(0, 0, 1, 1));
+				GUI.Label(new Rect(16, 36, 134, 16), "input:" + value.ToString("0.###"));
+				break;
+			case 4:
+				GUI.color = Color.gray;
+				GUI.Button(new Rect(8, 16, 134, 20), "SHIROTECH");
+				GUI.color = circleColor.Evaluate(value);
+				GUI.DrawTextureWithTexCoords(new Rect(133, 35, 18, 18), NodeWindowEx.circle.texture, new Rect(0, 0, 1, 1));
+				GUI.skin.label.alignment = TextAnchor.UpperRight;
+				GUI.Label(new Rect(0, 36, 134, 16), "output:" + value.ToString("0.###"));
+				GUI.skin.label.alignment = TextAnchor.UpperLeft;
+				break;
+		}
+		GUI.color = Color.white;
+		GUI.DragWindow();
+	}
+	void PreviewArea()
+	{
+		DrawBox(new Rect(0, 0, 504, 484), new Color(0.3f, 0.3f, 0.3f));//画边框
+		DrawBox(new Rect(2, 2, 500, 480), gridBgColor);//画底色
+		DrawGrids(gridX, gridY, gridLineColor);//画网格
+	}
+	void DrawBox(Rect rect, Color color)
+	{
+		GUI.color = color;
+		GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill);
+		GUI.color = Color.white;
+	}
+	void DrawGrids(float gridX, float gridY, Color lineColor)
+	{
+		GUI.color = lineColor;
+		float num = 2;
+		while (num < 500)//画网格的竖线
+		{
+			GUI.DrawTexture(new Rect(num, 2, 1, 480), Texture2D.whiteTexture, ScaleMode.StretchToFill);
+			num += gridX;
+		}
+		num = 2;
+		while (num < 480)//画网格的横线
+		{
+			GUI.DrawTexture(new Rect(2, num, 500, 1), Texture2D.whiteTexture, ScaleMode.StretchToFill);
+			num += gridY;
+		}
+		GUI.color = Color.white;
+	}
+	void DrawHighlight(Rect thisRect)
+	{
+		EditorGUI.DrawRect(new Rect(thisRect.x - 8, thisRect.y - 8, thisRect.width + 16, 4), nodeHighlightColor);
+		EditorGUI.DrawRect(new Rect(thisRect.x - 8, thisRect.y + thisRect.height + 4, thisRect.width + 16, 4), nodeHighlightColor);
+		EditorGUI.DrawRect(new Rect(thisRect.x - 8, thisRect.y - 4, 4, thisRect.height + 8), nodeHighlightColor);
+		EditorGUI.DrawRect(new Rect(thisRect.x + thisRect.width + 4, thisRect.y - 4, 4, thisRect.height + 8), nodeHighlightColor);
+	}
+	void DrawCurve(Vector3 startPos, Vector3 endPos, Color color)
+	{
+		Vector3 startTangent = startPos + Vector3.right * 50f;
+		Vector3 endTangent = endPos + Vector3.left * 50f;
+		Color color2 = new Color(0f, 0f, 0f, 0.06f);
+		for (int i = 0; i < 3; i++)
+		{
+			Handles.DrawBezier(startPos, endPos, startTangent, endTangent, color2, null, (i + 1) * 5);//阴影
+		}
+		Handles.DrawBezier(startPos, endPos, startTangent, endTangent, color, null, 2f);
+	}
+	/// <summary>
+	/// this -> Asset
+	/// </summary>
+	void DoSave()
+	{
+		NodeWindowSettings nws = AssetDatabase.LoadAssetAtPath<NodeWindowSettings>("Assets/NodeWindowExConfig.asset");
+		if (nws == null)
+		{
+			nws = CreateInstance<NodeWindowSettings>();
+			AssetDatabase.CreateAsset(nws, "Assets/NodeWindowExConfig.asset");
+		}
+		nws.width = width;
+		nws.height = height;
+		nws.gridX = gridX;
+		nws.gridY = gridY;
+		nws.gridBgColor = gridBgColor;
+		nws.gridLineColor = gridLineColor;
+		nws.lineColor = lineColor;
+		nws.lineHighlightColor = lineHighlightColor;
+		nws.connectingColor = connectingColor;
+		nws.enHint = enHint;
+		nws.lineHintColor = lineHintColor;
+		nws.nodeGraphColor = nodeGraphColor;
+		nws.nodeGraphIOColor = nodeGraphIOColor;
+		nws.nodeCommentColor = nodeCommentColor;
+		nws.nodeHighlightColor = nodeHighlightColor;
+		nws.minCircleValue = minCircleValue;
+		nws.maxCircleValue = maxCircleValue;
+		nws.circleColor = circleColor;
+		nws.k_refresh = k_refresh;
+		nws.k_snap = k_snap;
+		nws.isCloseOnLostFocus = isCloseOnLostFocus;
+		nws.addLocation = addLocation;
+		nws.addNetLocation = addNetLocation;
+	}
+	/// <summary>
+	/// Asset -> this
+	/// </summary>
+	void GetValueFromAsset()
+	{
+		NodeWindowSettings nws = AssetDatabase.LoadAssetAtPath<NodeWindowSettings>("Assets/NodeWindowExConfig.asset");
+		if (nws == null)
+		{
+			nws = CreateInstance<NodeWindowSettings>();
+			nws.InitColor();
+			AssetDatabase.CreateAsset(nws, "Assets/NodeWindowExConfig.asset");
+		}
+		width = nws.width;
+		height = nws.height;
+		gridX = nws.gridX;
+		gridY = nws.gridY;
+		gridBgColor = nws.gridBgColor;
+		gridLineColor = nws.gridLineColor;
+		lineColor = nws.lineColor;
+		lineHighlightColor = nws.lineHighlightColor;
+		connectingColor = nws.connectingColor;
+		enHint = nws.enHint;
+		lineHintColor = nws.lineHintColor;
+		nodeGraphColor = nws.nodeGraphColor;
+		nodeGraphIOColor = nws.nodeGraphIOColor;
+		nodeCommentColor = nws.nodeCommentColor;
+		nodeHighlightColor = nws.nodeHighlightColor;
+		minCircleValue = nws.minCircleValue;
+		maxCircleValue = nws.maxCircleValue;
+		circleColor = nws.circleColor;
+		k_refresh = nws.k_refresh;
+		k_snap = nws.k_snap;
+		isCloseOnLostFocus = nws.isCloseOnLostFocus;
+		addLocation = nws.addLocation;
+		addNetLocation = nws.addNetLocation;
+
+		switch (addLocation)
+		{
+			case NodeWindowEx.NodeAddLocation.OnRoot:text = "节点图"; break;
+			case NodeWindowEx.NodeAddLocation.OnSelection:text = "选中的物体"; break;
+		}
+		switch (addNetLocation)
+		{
+			case NodeWindowEx.NodeAddLocation.OnRoot: text2 = "节点图"; break;
+			case NodeWindowEx.NodeAddLocation.OnSelection: text2 = "选中的物体"; break;
+		}
+		serializedObject = new SerializedObject(nws);
+	}
+	/// <summary>
+	/// 恢复默认值
+	/// </summary>
+	void ResetDefault()
+	{
+		width = 3200;
+		height = 2400;
+		gridX = 32;
+		gridY = 32;
+		gridBgColor = new Color(0.75f, 0.75f, 0.75f);
+		gridLineColor = new Color(0.65f, 0.65f, 0.65f);
+		lineColor = new Color(0.7f, 0.7f, 1f);
+		lineHighlightColor = new Color(1f, 0.5f, 0);
+		connectingColor = Color.white;
+		enHint = true;
+		lineHintColor = new Color(1f, 0, 0, 0.5f);
+		nodeGraphColor = new Color(1f, 0.9f, 0.7f);
+		nodeGraphIOColor = new Color(1f, 0.7f, 0.7f);
+		nodeCommentColor = Color.green;
+		nodeHighlightColor = new Color(1f, 0.5f, 0.3f, 0.5f);
+		minCircleValue = 0.4999f;
+		maxCircleValue = 0.5f;
+
+		k_refresh = KeyCode.R;
+		k_snap = KeyCode.Q;
+		isCloseOnLostFocus = true;
+		addLocation = NodeWindowEx.NodeAddLocation.OnRoot;
+		addNetLocation = NodeWindowEx.NodeAddLocation.OnRoot;
+
+		text = "节点图";
+		text2 = "节点图";
+
+		
+	}
+	void ShowMenu(int type)
+	{
+		GenericMenu menu = new GenericMenu();
+		menu.AddItem(new GUIContent("节点图"), false, () =>
+		{
+			switch (type)
+			{
+				case 1:
+					text = "节点图";
+					addLocation = NodeWindowEx.NodeAddLocation.OnRoot; break;
+				case 2:
+					text2 = "节点图";
+					addNetLocation = NodeWindowEx.NodeAddLocation.OnRoot; break;
+			}
+		});
+		menu.AddItem(new GUIContent("选中的物体"), false, () =>
+		{
+			switch (type)
+			{
+				case 1:
+					text = "选中的物体";
+					addLocation = NodeWindowEx.NodeAddLocation.OnSelection; break;
+				case 2:
+					text2 = "选中的物体";
+					addNetLocation = NodeWindowEx.NodeAddLocation.OnSelection; break;
+			}
+		});
+		menu.ShowAsContext();
+	}
+
+	Rect r1 = new Rect(300, 50, 150, 37);
+	Rect r2 = new Rect(50, 100, 150, 72);
+	Rect r3 = new Rect(320, 225, 150, 56);
+	Rect r4 = new Rect(50, 400, 150, 56);
+	SerializedProperty circleColorProperty;
+	SerializedObject serializedObject;
+	float value = 1;
+	Vector2 scrollPos;
+	//////////////////////
+	float width;
+	float height;
+	float gridX;
+	float gridY;
+	Color gridBgColor;
+	Color gridLineColor;
+	Color lineColor;
+	Color lineHighlightColor;
+	Color connectingColor;
+	bool enHint;
+	Color lineHintColor;
+	Color nodeGraphColor;
+	Color nodeGraphIOColor;
+	Color nodeCommentColor;
+	Color nodeHighlightColor;
+	float minCircleValue;
+	float maxCircleValue;
+	Gradient circleColor;
+	KeyCode k_refresh;
+	KeyCode k_snap;
+	bool isCloseOnLostFocus;
+	NodeWindowEx.NodeAddLocation addLocation;
+	NodeWindowEx.NodeAddLocation addNetLocation;
+	//////////////////////
+	string text;
+	string text2;
 }
