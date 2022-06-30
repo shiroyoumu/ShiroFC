@@ -136,6 +136,7 @@ public class NodeWindowEx : EditorWindow
 					//主区域 (
 					DrawGrids(gridX, gridY, gridBgColor, gridLineColor);
 					HandleEvents();
+					ShowNodeProperty();
 					ShowRightMenu();
 					if (pendingGraph != activeGraph || activeGraph == null)
 					{
@@ -163,7 +164,7 @@ public class NodeWindowEx : EditorWindow
 					if (isDragging)
 					{ 
 						DrawCurve(dragStartPos, dragEndPos, connectingColor);//绘制待定连线
-						if(enHint)
+						if(enHint && hintStartPos != hintEndPos)
 							DrawCurve(hintStartPos, hintEndPos, lineHintColor);//绘制提示线
 					}						
 					DrawFrame();
@@ -344,6 +345,7 @@ public class NodeWindowEx : EditorWindow
 	{
 		if (graph != null)
 		{ 
+			selectedNodes.Clear();
 			Transform transform = graph.transform;//当前节点图黄色节点
 			graphNodes = new List<Node>();
 			CollectNodes(graphNodes, graph, transform);//收集节点
@@ -701,22 +703,37 @@ public class NodeWindowEx : EditorWindow
 	{
 		for (int i = 0; i < nodeRects.Count; i++)//遍历节点图中每个节点
 		{
-			for (int j = 0; j < nodeRects[i].sockets.Count; j++)//遍历节点里的每个接口
+			if (selectedNodes.Contains(nodeRects[i]))
 			{
-				NodeSocketRectEx nodeSocketRect = nodeRects[i].sockets[j];
-				NodeInput nodeInput = nodeSocketRect.socket as NodeInput;
-				if (nodeInput != null && nodeInput.GetConnectedOutput() != null)//如果是输入端，且有连接
+				for (int j = 0; j < nodeRects[i].sockets.Count; j++)//遍历节点里的每个接口
 				{
-					NodeSocketRectEx nodeSocketRect2;
-					if (sockets2Rect.TryGetValue(nodeInput.GetConnectedOutput(), out nodeSocketRect2))//获取与该输入端相连的输出端的接口
+					NodeSocketRectEx nodeSocketRect = nodeRects[i].sockets[j];
+					NodeInput nodeInput = nodeSocketRect.socket as NodeInput;
+					if (nodeInput != null && nodeInput.GetConnectedOutput() != null)//如果是输入端，且有连接
 					{
-						if (nodeInput is NodeExit)//如果碰到了输入端（输入端为NodeExit；输出端为NodeEntry）
+						NodeSocketRectEx nodeSocketRect2;
+						if (sockets2Rect.TryGetValue(nodeInput.GetConnectedOutput(), out nodeSocketRect2))//获取与该输入端相连的输出端的接口
 						{
-							DrawCurve(nodeSocketRect.connectPoint, nodeSocketRect2.connectPoint, Color.white);//画白线
+							DrawCurve(nodeSocketRect2.connectPoint, nodeSocketRect.connectPoint, lineHighlightColor);//画高亮线
 						}
-						else//如果碰到了输出端
+					}
+				}
+			}
+			else
+			{
+				for (int j = 0; j < nodeRects[i].sockets.Count; j++)//遍历节点里的每个接口
+				{
+					NodeSocketRectEx nodeSocketRect = nodeRects[i].sockets[j];
+					NodeInput nodeInput = nodeSocketRect.socket as NodeInput;
+					if (nodeInput != null && nodeInput.GetConnectedOutput() != null)//如果是输入端，且有连接
+					{
+						NodeSocketRectEx nodeSocketRect2;
+						if (sockets2Rect.TryGetValue(nodeInput.GetConnectedOutput(), out nodeSocketRect2))//获取与该输入端相连的输出端的接口
 						{
-							DrawCurve(nodeSocketRect2.connectPoint, nodeSocketRect.connectPoint, lineColor);//画浅蓝线
+							if(selectedNodes.Contains(nodeSocketRect2.nodeRect)) 
+								DrawCurve(nodeSocketRect2.connectPoint, nodeSocketRect.connectPoint, lineHighlightColor);//画高亮线
+							else
+								DrawCurve(nodeSocketRect2.connectPoint, nodeSocketRect.connectPoint, lineColor);//画普通线
 						}
 					}
 				}
@@ -899,6 +916,26 @@ public class NodeWindowEx : EditorWindow
 		}
 	}
 	/// <summary>
+	/// 打开节点属性窗口
+	/// </summary>
+	void ShowNodeProperty()
+	{
+		Event e = Event.current;
+		if (e.type == EventType.MouseDown && e.button == 1)
+		{
+			Vector2 mousePos = e.mousePosition;
+			foreach (var item in nodeRects)
+			{
+				if (item.HitTest2(mousePos))
+				{
+					NodePropertyWindow.Open(item);
+					e.Use();
+					return;
+				}
+			}
+		}
+	}
+	/// <summary>
 	/// 打开右键菜单
 	/// </summary>
 	void ShowRightMenu()
@@ -997,6 +1034,7 @@ public class NodeWindowEx : EditorWindow
 		}
 		catch (NullReferenceException) { return; }
 	}
+
 
 	/// <summary>
 	/// 即将加载的节点图
@@ -1153,6 +1191,10 @@ public class NodeWindowEx : EditorWindow
 	/// </summary>
 	public static Color lineColor = new Color(0.7f, 0.7f, 1f);
 	/// <summary>
+	/// 节点连线高亮颜色
+	/// </summary>
+	public static Color lineHighlightColor = new Color(1f, 0.5f, 0);
+	/// <summary>
 	/// 正在连接的连接线颜色
 	/// </summary>
 	public static Color connectingColor = Color.white;
@@ -1164,7 +1206,6 @@ public class NodeWindowEx : EditorWindow
 	/// 提示连接线颜色
 	/// </summary>
 	public static Color lineHintColor = Color.red;
-
 	/// <summary>
 	/// 节点图节点颜色
 	/// </summary>
@@ -1626,4 +1667,179 @@ public class NodeSocketRectEx
 	/// 命中判定框
 	/// </summary>
 	public Rect hitRect;
+}
+
+/// <summary>
+/// 节点属性窗口类
+/// </summary>
+public class NodePropertyWindow : EditorWindow
+{
+	public static void Open(NodeRectEx nodeRect)
+	{
+		NodePropertyWindow win = (NodePropertyWindow)EditorWindow.GetWindow(typeof(NodePropertyWindow));
+		win.titleContent = new GUIContent() { text = nodeRect.node.Title };
+		win.minSize = new Vector2(300, 400);
+		if (NodeWindowEx.isCloseOnLostFocus)//如果是窗口模式
+		{
+			nodeRects.Clear();
+			if (NodeWindowEx.selectedNodes.Contains(nodeRect))//如果进入时点击的是选中的节点
+			{
+				isSame = true;
+                foreach (var item in NodeWindowEx.selectedNodes)//检测全选中的是不是同一类节点
+                {
+					if (item.node.GetType() != NodeWindowEx.selectedNodes[0].node.GetType())
+					{
+						isSame = false; break;
+					}
+                }
+				if(isSame)//是同一类
+					nodeRects.AddRange(NodeWindowEx.selectedNodes);//打开全部选中节点属性
+			}
+			else//如果进入时点击的不是选中的节点
+			{
+				nodeRects.Add(nodeRect);//只打开选中的节点属性
+				isSame = true;
+			}
+			if (nodeRects.Count > 0)
+			{ 
+				List<UnityEngine.Object> objs = new List<UnityEngine.Object>();
+				foreach (var item in nodeRects)
+				{
+					objs.Add(item.node);
+				}
+				nodeEditor = new SerializedObject(objs.ToArray());
+			}			
+		}
+		else//如果是面板模式
+		{
+			nodeRects.Clear();
+			win.Update();
+		}
+    }
+	void Update()
+	{
+		if (!NodeWindowEx.isCloseOnLostFocus && NodeWindowEx.selectedNodes.Count > 0)//如果是面板模式且有选中的节点
+		{
+			if (!nodeRects.SequenceEqual(NodeWindowEx.selectedNodes))//如果选中与当前显示的节点不相等
+			{
+				nodeRects.Clear();
+				isSame = true;
+                foreach (var item in NodeWindowEx.selectedNodes)//检测全选中的是不是同一类节点
+                {
+                    if (item.node.GetType() != NodeWindowEx.selectedNodes[0].node.GetType())
+                    {
+						isSame = false; break;
+                    }
+                }
+				if (isSame)//是同一类
+				{ 
+					nodeRects.AddRange(NodeWindowEx.selectedNodes);//打开全部选中节点属性				
+					List<UnityEngine.Object> objs = new List<UnityEngine.Object>();
+					foreach (var item in nodeRects)
+					{
+						objs.Add(item.node);
+					}
+					nodeEditor = new SerializedObject(objs.ToArray());
+				}             
+				Repaint();
+			}
+		}
+		if (!NodeWindowEx.isCloseOnLostFocus && NodeWindowEx.selectedNodes.Count == 0)//如果是面板模式且没有选中的节点
+		{
+			nodeRects.Clear();//啥都不显示
+			Repaint();
+		}
+	}
+	void OnLostFocus()
+	{
+		if (NodeWindowEx.isCloseOnLostFocus)
+			Close();
+	}
+	void OnGUI()
+    {
+		if (isSame)
+		{
+			if (nodeRects.Count > 0)//节点数大于0才显示
+			{
+				GUILayout.Space(10);
+				if (GUILayout.Button(nodeRects.Count > 1 ? "删除节点 ( " + nodeRects.Count + "个 )" : "删除节点"))
+				{
+					foreach (var item in nodeRects)
+					{
+						Undo.DestroyObjectImmediate(item.node);
+						DestroyImmediate(item.node);
+					}
+					if (NodeWindowEx.isCloseOnLostFocus)
+						Close();
+					NodeWindowEx.selectedNodes.Clear();
+					return;
+				}
+				GUILayout.Space(10);
+				if (GUILayout.Button(nodeRects.Count > 1 ? "复制全部节点" : "复制节点"))
+				{
+					foreach (var item in nodeRects)
+					{
+						Node newNode = item.node;
+						UnityEditorInternal.ComponentUtility.CopyComponent(item.node);
+						newNode.pos = new Vector2(10, 10);
+						Undo.RecordObject(item.node.gameObject, "duplicate");
+						UnityEditorInternal.ComponentUtility.PasteComponentAsNew(newNode.gameObject);
+					}
+					if (NodeWindowEx.isCloseOnLostFocus)
+						Close();
+					NodeWindowEx.selectedNodes.Clear();
+					return;
+				}
+				GUILayout.Space(15);
+				using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPos))
+				{
+					scrollPos = scrollView.scrollPosition;
+					using (new EditorGUILayout.VerticalScope())
+					{
+						EditorGUI.BeginChangeCheck();
+						nodeEditor.Update();
+						SerializedProperty iterator = nodeEditor.GetIterator();
+						bool enterChildren = true;
+						while (iterator.NextVisible(enterChildren))
+						{
+							using (new EditorGUI.DisabledScope("m_Script" == iterator.propertyPath))
+							{
+								EditorGUILayout.PropertyField(iterator, true);
+							}
+							enterChildren = false;
+						}
+						nodeEditor.ApplyModifiedProperties();
+						if (EditorGUI.EndChangeCheck())
+						{
+							List<Node> changeList = new List<Node>();
+							foreach (var item in nodeRects)
+							{
+								changeList.Add(item.node);
+							}
+							Undo.RecordObjects(changeList.ToArray(), "NodeChange");
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			GUILayout.Space(10);
+			GUILayout.Label("多节点属性编辑仅支持同种类型节点");
+		}				
+	}
+	
+	/// <summary>
+	/// 序列化对象
+	/// </summary>
+	public static SerializedObject nodeEditor;
+	/// <summary>
+	/// 序列化节点列表
+	/// </summary>
+	public static List<NodeRectEx> nodeRects = new List<NodeRectEx>();
+	/// <summary>
+	/// 是否选中同种节点
+	/// </summary>
+	public static bool isSame;
+	Vector2 scrollPos;
 }
