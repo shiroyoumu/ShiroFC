@@ -1947,7 +1947,7 @@ public class NodeWindowSettings : ScriptableObject
 public class ConfWindow : EditorWindow
 {
 	/*加入配置时修改： 
-	DoSave，GetValueFromAsset，ResetDefault，该类新增字段，NodeWindowSettings新增字段
+	SetValueToAsset，GetValueFromAsset，ResetDefault，该类新增字段，NodeWindowSettings新增字段
 	NodeWindowEx新增字段，OnGUI*/
 	public static void Init(NodeWindowEx winEx)
 	{
@@ -2069,7 +2069,7 @@ public class ConfWindow : EditorWindow
 					GUILayout.Space(50);
 					if (GUILayout.Button("保存", GUILayout.Width(100), GUILayout.Height(25)))
 					{
-						DoSave();
+						SetValueToAsset();
 						Close();
 					}
 					if (GUILayout.Button("放弃修改", GUILayout.Width(100), GUILayout.Height(25)))
@@ -2189,7 +2189,7 @@ public class ConfWindow : EditorWindow
 	/// <summary>
 	/// this -> Asset
 	/// </summary>
-	void DoSave()
+	void SetValueToAsset()
 	{
 		NodeWindowSettings nws = AssetDatabase.LoadAssetAtPath<NodeWindowSettings>("Assets/NodeWindowExConfig.asset");
 		if (nws == null)
@@ -2299,9 +2299,7 @@ public class ConfWindow : EditorWindow
 		addNetLocation = NodeWindowEx.NodeAddLocation.OnRoot;
 
 		text = "节点图";
-		text2 = "节点图";
-
-		
+		text2 = "节点图";	
 	}
 	void ShowMenu(int type)
 	{
