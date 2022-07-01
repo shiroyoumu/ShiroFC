@@ -389,8 +389,11 @@ public class NodeWindowEx : EditorWindow
 				else//其他节点（灰色节点）
 				{
 					NodeRectEx nodeRect4 = new NodeRectEx(this);//画一个框
-					nodeRect4.Initialize(node);//初始化普通节点
-					nodeRects.Add(nodeRect4);
+					if (!(node is NodeGraph && (node as NodeGraph).inputs.Count == 0 && (node as NodeGraph).outputs.Count == 0))
+					{ 
+						nodeRect4.Initialize(node);//初始化普通节点
+						nodeRects.Add(nodeRect4);
+					}		
 				}
 			}
 			sockets2Rect.Clear();
@@ -930,7 +933,7 @@ public class NodeWindowEx : EditorWindow
 			{
 				if (item.HitTest2(mousePos))
 				{
-					NodePropertyWindow.Open(item);
+					NodePropertyWindow.Open(item, this);
 					e.Use();
 					return;
 				}
@@ -1255,7 +1258,7 @@ public class NodeWindowEx : EditorWindow
 	/// <summary>
 	/// 提示连接线颜色
 	/// </summary>
-	public static Color lineHintColor = Color.red;
+	public static Color lineHintColor = new Color(0.4f, 0.4f, 0.4f, 0.5f);
 	/// <summary>
 	/// 节点图节点颜色
 	/// </summary>
@@ -1724,14 +1727,21 @@ public class NodeSocketRectEx
 /// </summary>
 public class NodePropertyWindow : EditorWindow
 {
-	public static void Open(NodeRectEx nodeRect)
+	public static void Open(NodeRectEx nodeRect, NodeWindowEx winEx)
 	{
 		NodePropertyWindow win = (NodePropertyWindow)EditorWindow.GetWindow(typeof(NodePropertyWindow));
-		win.titleContent = new GUIContent() { text = nodeRect.node.Title };
+		if (NodeWindowEx.isCloseOnLostFocus)
+		{ 
+			win.titleContent = new GUIContent() { text = nodeRect.node.Title };
+			win.position = new Rect(winEx.position.position + nodeRect.nodePos + new Vector2(50, 30) - new Vector2(330, 0), win.position.size);
+		}			
+		else
+			win.titleContent = new GUIContent() { text = "节点属性" };
 		win.minSize = new Vector2(300, 400);
 		if (NodeWindowEx.isCloseOnLostFocus)//如果是窗口模式
 		{
-			nodeRects.Clear();
+			nodeButtonRects.Clear();
+			nodeRects.Clear();		
 			if (NodeWindowEx.selectedNodes.Contains(nodeRect))//如果进入时点击的是选中的节点
 			{
 				isSame = true;
@@ -1742,11 +1752,15 @@ public class NodePropertyWindow : EditorWindow
 						isSame = false; break;
 					}
                 }
-				if(isSame)//是同一类
+				nodeButtonRects.AddRange(NodeWindowEx.selectedNodes);
+				if (isSame)//是同一类
+				{				
 					nodeRects.AddRange(NodeWindowEx.selectedNodes);//打开全部选中节点属性
+				}
 			}
 			else//如果进入时点击的不是选中的节点
 			{
+				nodeButtonRects.Add(nodeRect);
 				nodeRects.Add(nodeRect);//只打开选中的节点属性
 				isSame = true;
 			}
@@ -1762,18 +1776,18 @@ public class NodePropertyWindow : EditorWindow
 		}
 		else//如果是面板模式
 		{
-			nodeRects.Clear();
 			win.Update();
 		}
     }
 	void Update()
 	{
+		isSame = true;
 		if (!NodeWindowEx.isCloseOnLostFocus && NodeWindowEx.selectedNodes.Count > 0)//如果是面板模式且有选中的节点
 		{
-			if (!nodeRects.SequenceEqual(NodeWindowEx.selectedNodes))//如果选中与当前显示的节点不相等
+			if (!nodeButtonRects.SequenceEqual(NodeWindowEx.selectedNodes))//如果选中与当前显示的节点不相等
 			{
+				nodeButtonRects.Clear();
 				nodeRects.Clear();
-				isSame = true;
                 foreach (var item in NodeWindowEx.selectedNodes)//检测全选中的是不是同一类节点
                 {
                     if (item.node.GetType() != NodeWindowEx.selectedNodes[0].node.GetType())
@@ -1781,8 +1795,9 @@ public class NodePropertyWindow : EditorWindow
 						isSame = false; break;
                     }
                 }
+				nodeButtonRects.AddRange(NodeWindowEx.selectedNodes);
 				if (isSame)//是同一类
-				{ 
+				{
 					nodeRects.AddRange(NodeWindowEx.selectedNodes);//打开全部选中节点属性				
 					List<UnityEngine.Object> objs = new List<UnityEngine.Object>();
 					foreach (var item in nodeRects)
@@ -1790,12 +1805,14 @@ public class NodePropertyWindow : EditorWindow
 						objs.Add(item.node);
 					}
 					nodeEditor = new SerializedObject(objs.ToArray());
-				}             
+					titleContent = new GUIContent() { text = nodeRects[0].node.Title };
+				}
 				Repaint();
 			}
 		}
 		if (!NodeWindowEx.isCloseOnLostFocus && NodeWindowEx.selectedNodes.Count == 0)//如果是面板模式且没有选中的节点
 		{
+			nodeButtonRects.Clear();
 			nodeRects.Clear();//啥都不显示
 			Repaint();
 		}
@@ -1806,41 +1823,44 @@ public class NodePropertyWindow : EditorWindow
 			Close();
 	}
 	void OnGUI()
-    {
+    {	
+		GUILayout.Space(10);
+		using (new EditorGUI.DisabledScope(nodeButtonRects.Count <= 0))
+		{
+			if (GUILayout.Button(nodeButtonRects.Count > 1 ? "删除节点 ( " + nodeButtonRects.Count + "个 )" : "删除节点"))
+			{
+				foreach (var item in nodeButtonRects)
+				{
+					Undo.DestroyObjectImmediate(item.node);
+					DestroyImmediate(item.node);
+				}
+				if (NodeWindowEx.isCloseOnLostFocus)
+					Close();
+				NodeWindowEx.selectedNodes.Clear();
+				return;
+			}
+			GUILayout.Space(10);
+			if (GUILayout.Button(nodeButtonRects.Count > 1 ? "复制全部节点" : "复制节点"))
+			{
+				foreach (var item in nodeButtonRects)
+				{
+					Node newNode = item.node;
+					UnityEditorInternal.ComponentUtility.CopyComponent(item.node);
+					newNode.pos = new Vector2(10, 10);
+					Undo.RecordObject(item.node.gameObject, "duplicate");
+					UnityEditorInternal.ComponentUtility.PasteComponentAsNew(newNode.gameObject);
+				}
+				if (NodeWindowEx.isCloseOnLostFocus)
+					Close();
+				NodeWindowEx.selectedNodes.Clear();
+				return;
+			}
+		}
+		GUILayout.Space(15);
 		if (isSame)
 		{
 			if (nodeRects.Count > 0)//节点数大于0才显示
 			{
-				GUILayout.Space(10);
-				if (GUILayout.Button(nodeRects.Count > 1 ? "删除节点 ( " + nodeRects.Count + "个 )" : "删除节点"))
-				{
-					foreach (var item in nodeRects)
-					{
-						Undo.DestroyObjectImmediate(item.node);
-						DestroyImmediate(item.node);
-					}
-					if (NodeWindowEx.isCloseOnLostFocus)
-						Close();
-					NodeWindowEx.selectedNodes.Clear();
-					return;
-				}
-				GUILayout.Space(10);
-				if (GUILayout.Button(nodeRects.Count > 1 ? "复制全部节点" : "复制节点"))
-				{
-					foreach (var item in nodeRects)
-					{
-						Node newNode = item.node;
-						UnityEditorInternal.ComponentUtility.CopyComponent(item.node);
-						newNode.pos = new Vector2(10, 10);
-						Undo.RecordObject(item.node.gameObject, "duplicate");
-						UnityEditorInternal.ComponentUtility.PasteComponentAsNew(newNode.gameObject);
-					}
-					if (NodeWindowEx.isCloseOnLostFocus)
-						Close();
-					NodeWindowEx.selectedNodes.Clear();
-					return;
-				}
-				GUILayout.Space(15);
 				using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPos))
 				{
 					scrollPos = scrollView.scrollPosition;
@@ -1871,9 +1891,14 @@ public class NodePropertyWindow : EditorWindow
 					}
 				}
 			}
+			else
+			{
+				titleContent = new GUIContent() { text = "节点属性" };
+			}
 		}
 		else
 		{
+			titleContent = new GUIContent() { text = "多种节点" };
 			GUILayout.Space(10);
 			GUILayout.Label("多节点属性编辑仅支持同种类型节点");
 		}				
@@ -1883,6 +1908,10 @@ public class NodePropertyWindow : EditorWindow
 	/// 序列化对象
 	/// </summary>
 	public static SerializedObject nodeEditor;
+	/// <summary>
+	/// 按钮处理的节点列表
+	/// </summary>
+	public static List<NodeRectEx> nodeButtonRects = new List<NodeRectEx>();
 	/// <summary>
 	/// 序列化节点列表
 	/// </summary>
@@ -2284,7 +2313,7 @@ public class ConfWindow : EditorWindow
 		lineHighlightColor = new Color(1f, 0.5f, 0);
 		connectingColor = Color.white;
 		enHint = true;
-		lineHintColor = new Color(1f, 0, 0, 0.5f);
+		lineHintColor = new Color(0.4f, 0.4f, 0.4f, 0.5f);
 		nodeGraphColor = new Color(1f, 0.9f, 0.7f);
 		nodeGraphIOColor = new Color(1f, 0.7f, 0.7f);
 		nodeCommentColor = Color.green;
