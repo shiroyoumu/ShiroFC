@@ -21,7 +21,6 @@ public class NodeWindowEx : EditorWindow
 		circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
 		square = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
 		Init();
-		DoRead();//读取配置文件
 		try//读取按钮状态
 		{			
 			isLiveUpdate = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isLiveUpdate"));
@@ -38,6 +37,7 @@ public class NodeWindowEx : EditorWindow
 	}
 	void OnFocus()
 	{
+		canRead = true;
 		try//得焦读取按钮状态
 		{			
 			isLiveUpdate = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isLiveUpdate"));
@@ -51,8 +51,13 @@ public class NodeWindowEx : EditorWindow
 		Repaint();
 	}
 	void Update()
-	{ 
-		if(!EditorApplication.isPlaying || (EditorApplication.isPlaying && isLiveUpdate))
+	{
+		if (canRead)
+		{
+			DoRead();//读取配置文件
+			canRead = false;
+		}
+		if (!EditorApplication.isPlaying || (EditorApplication.isPlaying && isLiveUpdate))
 			Repaint();
 	}
 	void OnGUI()
@@ -1120,6 +1125,7 @@ public class NodeWindowEx : EditorWindow
 	/// </summary>
 	List<Vector2> selectionDelta = new List<Vector2>();
 
+	bool canRead;
 	/// <summary>
 	/// 拖拽开始位置
 	/// </summary>
@@ -1942,7 +1948,7 @@ public class NodeWindowSettings : ScriptableObject
 	public Color lineHighlightColor = new Color(1f, 0.5f, 0);
 	public Color connectingColor = Color.white;
 	public bool enHint = true;
-	public Color lineHintColor = new Color(1f, 0, 0, 0.5f);
+	public Color lineHintColor = new Color(0.4f, 0.4f, 0.4f, 0.5f);
 	public Color nodeGraphColor = new Color(1f, 0.9f, 0.7f);
 	public Color nodeGraphIOColor = new Color(1f, 0.7f, 0.7f);
 	public Color nodeCommentColor = Color.green;
