@@ -34,6 +34,12 @@ public class NodeWindowSettings : ScriptableObject
 	public bool isCloseOnLostFocus = true;
 	public NodeAddLocation addLocation = NodeAddLocation.OnRoot;
 	public NodeAddLocation addNetLocation = NodeAddLocation.OnRoot;
+	public KeyCode k_netSignal = KeyCode.N;
+	public KeyCode k_unityEvent = KeyCode.U;
+	public KeyCode k_combine = KeyCode.C;
+	public KeyCode k_time = KeyCode.T;
+	public KeyCode k_range = KeyCode.I;
+	public KeyCode k_trigger = KeyCode.G;
 
 	public void InitColor()
 	{

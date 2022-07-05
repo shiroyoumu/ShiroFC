@@ -463,12 +463,157 @@ public class NodeWindowEx : EditorWindow
 		}
 	}
 	/// <summary>
+	/// 处理快捷键
+	/// </summary>
+	void HandleKey(Event e)
+	{
+		////////////////// NetSignal ////////////////////
+		if (e.type == EventType.KeyDown && e.keyCode == k_netSignal)
+		{
+            f1 = true;
+		}
+		if (e.type == EventType.KeyUp && e.keyCode == k_netSignal)
+		{
+			f1 = false;
+		}
+		if (e.type == EventType.MouseDown && e.button == 0 && f1)
+		{ 
+			f1 = false;
+			GameObject tar;
+			switch (addNetLocation)
+			{
+				case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
+				case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
+				default: tar = activeGraph.gameObject; break;
+			}
+			NetSignal n = Undo.AddComponent<NetSignal>(tar);
+			n.pos = e.mousePosition;
+			DoRefresh();
+		}
+		////////////////// SignalUnityEvent ////////////////////
+		if (e.type == EventType.KeyDown && e.keyCode == k_unityEvent)
+		{
+			f2 = true;
+		}
+		if (e.type == EventType.KeyUp && e.keyCode == k_unityEvent)
+		{
+			f2 = false;
+		}
+		if (e.type == EventType.MouseDown && e.button == 0 && f2)
+		{
+			f2 = false;
+			GameObject tar;
+			switch (addLocation)
+			{
+				case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
+				case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
+				default: tar = activeGraph.gameObject; break;
+			}
+			SignalUnityEvent n = Undo.AddComponent<SignalUnityEvent>(tar);
+			n.pos = e.mousePosition;
+			DoRefresh();
+		}
+		////////////////// SignalCombine ////////////////////
+		if (e.type == EventType.KeyDown && e.keyCode == k_combine)
+		{
+			f3 = true;
+		}
+		if (e.type == EventType.KeyUp && e.keyCode == k_combine)
+		{
+			f3 = false;
+		}
+		if (e.type == EventType.MouseDown && e.button == 0 && f3)
+		{
+			f3 = false;
+			GameObject tar;
+			switch (addLocation)
+			{
+				case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
+				case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
+				default: tar = activeGraph.gameObject; break;
+			}
+			HumanAPI.SignalCombine n = Undo.AddComponent<HumanAPI.SignalCombine>(tar);
+			n.pos = e.mousePosition;
+			DoRefresh();
+		}
+		////////////////// SignalTime ////////////////////
+		if (e.type == EventType.KeyDown && e.keyCode == k_time)
+		{
+			f4 = true;
+		}
+		if (e.type == EventType.KeyUp && e.keyCode == k_time)
+		{
+			f4 = false;
+		}
+		if (e.type == EventType.MouseDown && e.button == 0 && f4)
+		{
+			f4 = false;
+			GameObject tar;
+			switch (addLocation)
+			{
+				case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
+				case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
+				default: tar = activeGraph.gameObject; break;
+			}
+			SignalTime n = Undo.AddComponent<SignalTime>(tar);
+			n.pos = e.mousePosition;
+			DoRefresh();
+		}
+		////////////////// SignalMathInRange ////////////////////
+		if (e.type == EventType.KeyDown && e.keyCode == k_range)
+		{
+			f5 = true;
+		}
+		if (e.type == EventType.KeyUp && e.keyCode == k_range)
+		{
+			f5 = false;
+		}
+		if (e.type == EventType.MouseDown && e.button == 0 && f5)
+		{
+			f5 = false;
+			GameObject tar;
+			switch (addLocation)
+			{
+				case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
+				case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
+				default: tar = activeGraph.gameObject; break;
+			}
+			SignalMathInRange n = Undo.AddComponent<SignalMathInRange>(tar);
+			n.pos = e.mousePosition;
+			DoRefresh();
+		}
+		////////////////// TriggerVolume ////////////////////
+		if (e.type == EventType.KeyDown && e.keyCode == k_trigger)
+		{
+			f6 = true;
+		}
+		if (e.type == EventType.KeyUp && e.keyCode == k_trigger)
+		{
+			f6 = false;
+		}
+		if (e.type == EventType.MouseDown && e.button == 0 && f6)
+		{
+			f6 = false;
+			GameObject tar;
+			switch (addLocation)
+			{
+				case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
+				case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
+				default: tar = activeGraph.gameObject; break;
+			}
+			TriggerVolume n = Undo.AddComponent<TriggerVolume>(tar);
+			n.pos = e.mousePosition;
+			DoRefresh();
+		}
+	}
+	/// <summary>
 	/// 处理各种鼠标事件
 	/// </summary>
 	void HandleEvents()
 	{
 		Event e = Event.current;
 		mousePos = e.mousePosition;
+		HandleKey(e);
 		//卷动节点图
 		if (e.type == EventType.MouseDown && e.button == 2)//中键被按下
 		{
@@ -1025,16 +1170,7 @@ public class NodeWindowEx : EditorWindow
 		GameObject tar = null;
 		try
 		{
-			if (!(script is NetSignal))
-			{
-				switch (addLocation)
-				{
-					case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
-					case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
-				}
-				Undo.AddComponent(tar, (Type)script);
-			}
-			else
+			if ((Type)script == typeof(NetSignal))
 			{
 				switch (addNetLocation)
 				{
@@ -1042,6 +1178,17 @@ public class NodeWindowEx : EditorWindow
 					case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
 				}
 				Undo.AddComponent(tar, (Type)script);
+				DoRefresh();
+			}
+			else
+			{
+				switch (addLocation)
+				{
+					case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
+					case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
+				}
+				Undo.AddComponent(tar, (Type)script);
+				DoRefresh();
 			}
 		}
 		catch (NullReferenceException) { return; }
@@ -1098,6 +1245,12 @@ public class NodeWindowEx : EditorWindow
 		isCloseOnLostFocus = nws.isCloseOnLostFocus;
 		addLocation = (NodeAddLocation)nws.addLocation;
 		addNetLocation = (NodeAddLocation)nws.addNetLocation;
+		k_netSignal = nws.k_netSignal;
+		k_unityEvent = nws.k_unityEvent;
+		k_combine = nws.k_combine;
+		k_time = nws.k_time;
+		k_range = nws.k_range;
+		k_trigger = nws.k_trigger;
 	}
 
 	/// <summary>
@@ -1158,6 +1311,10 @@ public class NodeWindowEx : EditorWindow
 	/// 框选结束位置
 	/// </summary>
 	Vector2 frameEndPos;
+	/// <summary>
+	/// 快捷键标志位
+	/// </summary>
+	bool f1, f2, f3, f4, f5, f6;
 	/// <summary>
 	/// 鼠标位置（显示用）
 	/// </summary>
@@ -1317,6 +1474,30 @@ public class NodeWindowEx : EditorWindow
 	/// NetSignal添加位置
 	/// </summary>
 	public static NodeAddLocation addNetLocation = NodeAddLocation.OnRoot;
+	/// <summary>
+	/// 快速添加NetSignal快捷键
+	/// </summary>
+	public static KeyCode k_netSignal = KeyCode.N;
+	/// <summary>
+	/// 快速添加UnityEvent快捷键
+	/// </summary>
+	public static KeyCode k_unityEvent = KeyCode.U;
+	/// <summary>
+	/// 快速添加SignalCombine快捷键
+	/// </summary>
+	public static KeyCode k_combine = KeyCode.C;
+	/// <summary>
+	/// 快速添加SignalTime快捷键
+	/// </summary>
+	public static KeyCode k_time = KeyCode.T;
+	/// <summary>
+	/// 快速添加MathInRange快捷键
+	/// </summary>
+	public static KeyCode k_range = KeyCode.I;
+	/// <summary>
+	/// 快速添加TriggerVolume快捷键
+	/// </summary>
+	public static KeyCode k_trigger = KeyCode.G;
 	public enum NodeAddLocation
 	{
 		OnRoot = 1,
@@ -1437,7 +1618,7 @@ public class NodeRectEx
 				GUI.backgroundColor = NodeWindowEx.nodeCommentColor;
 				break;
 		}
-		thisRect = GUI.Window(id, thisRect, Render, node.Title);//创建一个窗口，同时绘制Render里的东西
+		thisRect = GUI.Window(id, thisRect, Render, node.Title);//创建一个窗口，同时绘制Render里的东西		
 		if (nodePos != thisRect.position)
 		{
 			Undo.RecordObject(node, "Move");
@@ -1467,44 +1648,47 @@ public class NodeRectEx
 	/// <param name="id"></param>
 	public void Render(int id)
 	{
-		GUI.color = Color.gray;//节点按钮默认颜色
-		GUI.skin.label.alignment = TextAnchor.UpperCenter;//字设置为居中
-		if (node is NodeGraph && nodeType == NodeRectType.Node)//如果是黄色节点
+		try
 		{
-			if (GUI.Button(new Rect(8f, 16f, 102f, 20f), node.name))//绘制按钮
+			GUI.color = Color.gray;//节点按钮默认颜色
+			GUI.skin.label.alignment = TextAnchor.UpperCenter;//字设置为居中
+			if (node is NodeGraph && nodeType == NodeRectType.Node)//如果是黄色节点
+			{
+				if (GUI.Button(new Rect(8f, 16f, 102f, 20f), node.name))//绘制按钮
+				{
+					Selection.activeGameObject = node.gameObject;
+					NodeWindowEx.selectedNodes.Add(this);
+					NodeWindowEx.selectedNodes = NodeWindowEx.selectedNodes.Distinct().ToList();//去重
+				}
+				if (GUI.Button(new Rect(110f, 16f, 32f, 20f), "▼"))//绘制↓按钮
+				{
+					NodeWindowEx.Init(node as NodeGraph);//打开下层节点图
+				}
+			}
+			else if (nodeType == NodeRectType.Comment)//如果是绿色节点
+			{
+				GUI.color = NodeWindowEx.nodeCommentColor;
+				string text = EditorGUI.TextArea(new Rect(8, 16, thisRect.width - 16, thisRect.height - 16 - 4), (node as NodeComment).comment);
+				if (text != ((NodeComment)node).comment)//节点图里改了字要赋值回去
+				{
+					((NodeComment)node).comment = text;
+					UpdateLayout();
+				}
+			}
+			else if (GUI.Button(new Rect(8f, 16f, 134f, 20f), node.name))//如果是灰色节点和红色节点
 			{
 				Selection.activeGameObject = node.gameObject;
 				NodeWindowEx.selectedNodes.Add(this);
 				NodeWindowEx.selectedNodes = NodeWindowEx.selectedNodes.Distinct().ToList();//去重
 			}
-			if (GUI.Button(new Rect(110f, 16f, 32f, 20f), "▼"))//绘制↓按钮
+			GUI.skin.label.alignment = TextAnchor.UpperLeft;
+			GUI.color = Color.white;
+			for (int i = 0; i < sockets.Count; i++)
 			{
-				NodeWindowEx.Init(node as NodeGraph);//打开下层节点图
+				sockets[i].Render();
 			}
-		}
-		else if (nodeType == NodeRectType.Comment)//如果是绿色节点
-		{
-			GUI.color = NodeWindowEx.nodeCommentColor;
-			string text = EditorGUI.TextArea(new Rect(8, 16, thisRect.width - 16, thisRect.height - 16 - 4), (node as NodeComment).comment);
-			if (text != ((NodeComment)node).comment)//节点图里改了字要赋值回去
-			{
-				((NodeComment)node).comment = text;
-				UpdateLayout();
-			}
-		}
-		else if (GUI.Button(new Rect(8f, 16f, 134f, 20f), node.name))//如果是灰色节点和红色节点
-		{
-			Selection.activeGameObject = node.gameObject;
-			NodeWindowEx.selectedNodes.Add(this);
-			NodeWindowEx.selectedNodes = NodeWindowEx.selectedNodes.Distinct().ToList();//去重
-		}
-		GUI.skin.label.alignment = TextAnchor.UpperLeft;
-		GUI.color = Color.white;
-		for (int i = 0; i < sockets.Count; i++)
-		{
-			sockets[i].Render();
-		}
-		GUI.DragWindow();
+			GUI.DragWindow();
+		}catch (Exception) { }
 	}
 	/// <summary>
 	/// 判断选中的接口框
@@ -1959,6 +2143,7 @@ public class ConfWindow : EditorWindow
 	{
 		NodeWindowEx.Init(nodeWin.activeGraph);
 	}
+
 	void OnGUI()
 	{
 		using (new EditorGUILayout.HorizontalScope())
@@ -2027,6 +2212,18 @@ public class ConfWindow : EditorWindow
 					{
 						ShowMenu(2);
 					}
+					EditorGUILayout.LabelField("快速添加NetSignal快捷键");
+					k_netSignal = (KeyCode)EditorGUILayout.EnumPopup("", k_netSignal);
+					EditorGUILayout.LabelField("快速添加UnityEvent快捷键");
+					k_unityEvent = (KeyCode)EditorGUILayout.EnumPopup("", k_unityEvent);
+					EditorGUILayout.LabelField("快速添加SignalCombine快捷键");
+					k_combine = (KeyCode)EditorGUILayout.EnumPopup("", k_combine);
+					EditorGUILayout.LabelField("快速添加SignalTime快捷键");
+					k_time = (KeyCode)EditorGUILayout.EnumPopup("", k_time);
+					EditorGUILayout.LabelField("快速添加MathInRange快捷键");
+					k_range = (KeyCode)EditorGUILayout.EnumPopup("", k_range);
+					EditorGUILayout.LabelField("快速添加TriggerVolume快捷键");
+					k_trigger = (KeyCode)EditorGUILayout.EnumPopup("", k_trigger);
 				}
 			}
 			GUILayout.Space(15);//中间分界
@@ -2214,6 +2411,12 @@ public class ConfWindow : EditorWindow
 		nws.isCloseOnLostFocus = isCloseOnLostFocus;
 		nws.addLocation = (NodeWindowSettings.NodeAddLocation)addLocation;
 		nws.addNetLocation = (NodeWindowSettings.NodeAddLocation)addNetLocation;
+		nws.k_netSignal = k_netSignal;
+		nws.k_unityEvent = k_unityEvent;
+		nws.k_combine = k_combine;
+		nws.k_time = k_time;
+		nws.k_range = k_range;
+		nws.k_trigger = k_trigger;
 		EditorUtility.SetDirty(nws);
 		AssetDatabase.SaveAssets();
 	}
@@ -2254,6 +2457,12 @@ public class ConfWindow : EditorWindow
 		isCloseOnLostFocus = nws.isCloseOnLostFocus;
 		addLocation = (NodeWindowEx.NodeAddLocation)nws.addLocation;
 		addNetLocation = (NodeWindowEx.NodeAddLocation)nws.addNetLocation;
+		k_netSignal = nws.k_netSignal;
+		k_unityEvent = nws.k_unityEvent;
+		k_combine = nws.k_combine;
+		k_time = nws.k_time;
+		k_range = nws.k_range;
+		k_trigger = nws.k_trigger;
 
 		switch (addLocation)
 		{
@@ -2295,10 +2504,20 @@ public class ConfWindow : EditorWindow
 		isCloseOnLostFocus = true;
 		addLocation = NodeWindowEx.NodeAddLocation.OnRoot;
 		addNetLocation = NodeWindowEx.NodeAddLocation.OnRoot;
+		k_netSignal = KeyCode.N;
+		k_unityEvent = KeyCode.U;
+		k_combine = KeyCode.C;
+		k_time = KeyCode.T;
+		k_range = KeyCode.I;
+		k_trigger = KeyCode.G;
 
 		text = "节点图";
 		text2 = "节点图";
 	}
+	/// <summary>
+	/// 显示下拉菜单
+	/// </summary>
+	/// <param name="type"></param>
 	void ShowMenu(int type)
 	{
 		GenericMenu menu = new GenericMenu();
@@ -2361,6 +2580,12 @@ public class ConfWindow : EditorWindow
 	bool isCloseOnLostFocus;
 	NodeWindowEx.NodeAddLocation addLocation;
 	NodeWindowEx.NodeAddLocation addNetLocation;
+	KeyCode k_netSignal;
+	KeyCode k_unityEvent;
+	KeyCode k_combine;
+	KeyCode k_time;
+	KeyCode k_range;
+	KeyCode k_trigger;
 	//////////////////////
 	string text;
 	string text2;
