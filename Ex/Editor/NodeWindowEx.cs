@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.WSA;
+
 
 public class NodeWindowEx : EditorWindow
 {
@@ -22,11 +22,12 @@ public class NodeWindowEx : EditorWindow
 		square = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
 		Init();
 		try//读取按钮状态
-		{			
+		{
 			isLiveUpdate = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isLiveUpdate"));
 			isTrackSelection = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isTrackSelection"));
 			isMap = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isMap"));
-		} catch (Exception) { }
+		}
+		catch (Exception) { }
 	}
 	void OnLostFocus()
 	{
@@ -39,11 +40,12 @@ public class NodeWindowEx : EditorWindow
 	{
 		canRead = true;
 		try//得焦读取按钮状态
-		{			
+		{
 			isLiveUpdate = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isLiveUpdate"));
 			isTrackSelection = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isTrackSelection"));
 			isMap = Convert.ToBoolean(EditorUserSettings.GetConfigValue("isMap"));
-		} catch (Exception) { }
+		}
+		catch (Exception) { }
 	}
 	void OnSelectionChange()
 	{
@@ -74,7 +76,7 @@ public class NodeWindowEx : EditorWindow
 		using (new EditorGUILayout.HorizontalScope())
 		{
 			using (new EditorGUILayout.VerticalScope())
-			{ 
+			{
 				DrawLine(new Rect(0, 0, 46, position.height), new Color(0.5f, 0.5f, 0.5f));
 				GUILayout.Space(10);
 				SetColorByBool(isLiveUpdate, new Color(0.75f, 1, 0.5f), Color.white);
@@ -127,8 +129,8 @@ public class NodeWindowEx : EditorWindow
 				{
 					ConfWindow.Init(this);
 				}
-				GUILayout.Space(5);	
-			}		
+				GUILayout.Space(5);
+			}
 			GUILayout.Space(2);
 			DrawLine(new Rect(46, 0, 2, position.height), new Color(0.25f, 0.25f, 0.25f));
 			DrawLine(new Rect(48, 0, 1, position.height), Color.white);
@@ -136,10 +138,10 @@ public class NodeWindowEx : EditorWindow
 			using (new GUILayout.VerticalScope())
 			{
 				using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPos, true, true))
-                {
-                    scrollPos = scrollView.scrollPosition;
-                    GUILayout.Label("", GUILayout.Width(width), GUILayout.Height(height));//占位符
-					//主区域 (
+				{
+					scrollPos = scrollView.scrollPosition;
+					GUILayout.Label("", GUILayout.Width(width), GUILayout.Height(height));//占位符
+																							//主区域 (
 					DrawGrids(gridX, gridY, gridBgColor, gridLineColor);
 					HandleEvents();
 					ShowNodeProperty();
@@ -147,7 +149,7 @@ public class NodeWindowEx : EditorWindow
 					HandleDelete();
 					if (pendingGraph != activeGraph || activeGraph == null)
 					{
-						if(pendingGraph != null)
+						if (pendingGraph != null)
 							activeGraph = pendingGraph;
 						if (activeGraph != null && activeGraph.transform.parent != null)//设置Up按钮
 							enUp = true;
@@ -156,7 +158,7 @@ public class NodeWindowEx : EditorWindow
 						BuildGraph(activeGraph);//显示节点图
 						Repaint();
 					}
-					if(activeGraph == null)//设置第二组按钮
+					if (activeGraph == null)//设置第二组按钮
 						enAll = false;
 					else
 						enAll = true;
@@ -164,25 +166,25 @@ public class NodeWindowEx : EditorWindow
 					SetText();
 					PrepareRender();
 
-					BeginWindows();				
-					try { Render(); }catch (Exception) { }					
+					BeginWindows();
+					try { Render(); } catch (Exception) { }
 					EndWindows();
-										
+
 					if (isDragging)
-					{ 
+					{
 						DrawCurve(dragStartPos, dragEndPos, connectingColor);//绘制待定连线
-						if(enHint && hintStartPos != hintEndPos)
+						if (enHint && hintStartPos != hintEndPos)
 							DrawCurve(hintStartPos, hintEndPos, lineHintColor);//绘制提示线
-					}						
+					}
 					DrawFrame();
 					SetMouseStyle();
 					//主区域 )
-				}				
+				}
 				using (new GUILayout.HorizontalScope())
-				{ 
+				{
 					EditorGUILayout.LabelField(string.Format("{0}{1}{2}{3}{4}", mousePos, connectionState, selectNum, _temp, _temp2));
 					SetColorByBool(isDragging, new Color(0.25f, 1, 0.25f), Color.white);
-					EditorGUILayout.LabelField(new GUIContent() {image = NodeWindowEx.square.texture }, GUILayout.Width(18), GUILayout.Width(18));//连线
+					EditorGUILayout.LabelField(new GUIContent() { image = NodeWindowEx.square.texture }, GUILayout.Width(18), GUILayout.Width(18));//连线
 					SetColorByBool(isScrolling, new Color(0.25f, 1, 0.25f), Color.white);
 					EditorGUILayout.LabelField(new GUIContent() { image = NodeWindowEx.square.texture }, GUILayout.Width(18), GUILayout.Width(18));//滚动
 					SetColorByBool(isDrawFrame, new Color(0.25f, 1, 0.25f), Color.white);
@@ -196,7 +198,7 @@ public class NodeWindowEx : EditorWindow
 			}
 			GUILayout.EndArea();
 			SetNoNode();
-		}		
+		}
 		DrawMiniMap();
 	}
 	/// <summary>
@@ -212,10 +214,10 @@ public class NodeWindowEx : EditorWindow
 	void DoUp()
 	{
 		if (activeGraph.transform.parent != null)
-		{ 
+		{
 			NodeGraph ng = activeGraph.transform.parent.GetComponentInParent<NodeGraph>();
 			if (ng != null)
-				Init(ng);			
+				Init(ng);
 		}
 	}
 	/// <summary>
@@ -351,7 +353,7 @@ public class NodeWindowEx : EditorWindow
 	public void BuildGraph(NodeGraph graph)
 	{
 		if (graph != null)
-		{ 
+		{
 			selectedNodes.Clear();
 			Transform transform = graph.transform;//当前节点图黄色节点
 			graphNodes = new List<Node>();
@@ -373,7 +375,7 @@ public class NodeWindowEx : EditorWindow
 				if (node == activeGraph)//如果是当前的NodeGraph
 				{
 					if ((node as NodeGraph).inputs.Count > 0)
-					{ 
+					{
 						NodeRectEx nodeRect = new NodeRectEx(this);//画一个框
 						nodeRect.InitializeGraphInput(activeGraph);//初始化节点图输入端（红色节点）
 						nodeRects.Add(nodeRect);
@@ -383,7 +385,7 @@ public class NodeWindowEx : EditorWindow
 						NodeRectEx nodeRect2 = new NodeRectEx(this);//画一个框
 						nodeRect2.InitializeGraphOutput(activeGraph);//初始化节点图输出端（红色节点）
 						nodeRects.Add(nodeRect2);
-					}				
+					}
 				}
 				else if (node is NodeComment)//如果是NodeComment节点（绿色节点）
 				{
@@ -395,10 +397,10 @@ public class NodeWindowEx : EditorWindow
 				{
 					NodeRectEx nodeRect4 = new NodeRectEx(this);//画一个框
 					if (!(node is NodeGraph && (node as NodeGraph).inputs.Count == 0 && (node as NodeGraph).outputs.Count == 0))
-					{ 
+					{
 						nodeRect4.Initialize(node);//初始化普通节点
 						nodeRects.Add(nodeRect4);
-					}		
+					}
 				}
 			}
 			sockets2Rect.Clear();
@@ -412,7 +414,7 @@ public class NodeWindowEx : EditorWindow
 				}
 			}
 		}
-		
+
 	}
 	/// <summary>
 	/// 准备渲染节点图
@@ -441,8 +443,8 @@ public class NodeWindowEx : EditorWindow
 	/// </summary>
 	void Render()
 	{
-        foreach (var item in nodeRects)
-        {
+		foreach (var item in nodeRects)
+		{
 			if (item.sockets.Count != 0 || item.nodeType == NodeRectEx.NodeRectType.Comment)
 			{
 				try//绘制节点框
@@ -464,7 +466,7 @@ public class NodeWindowEx : EditorWindow
 	/// 处理各种鼠标事件
 	/// </summary>
 	void HandleEvents()
-	{ 
+	{
 		Event e = Event.current;
 		mousePos = e.mousePosition;
 		//卷动节点图
@@ -488,15 +490,15 @@ public class NodeWindowEx : EditorWindow
 		{
 			frameStartPos = e.mousePosition;
 			bool isHit = false;
-            foreach (var item in nodeRects)
-            {
+			foreach (var item in nodeRects)
+			{
 				if (item.HitTest2(frameStartPos))
-				{ 
+				{
 					isHit = true;
 					break;
 				}
-            }
-			if(!isHit)
+			}
+			if (!isHit)
 				isDrawFrame = true;
 		}
 		if (isDrawFrame)
@@ -506,7 +508,7 @@ public class NodeWindowEx : EditorWindow
 		}
 		if (e.type == EventType.MouseUp && e.button == 0)
 		{
-			if(isDrawFrame)
+			if (isDrawFrame)
 				DoFramedNode();
 			frameStartPos = frameEndPos = Vector2.zero;
 			isDrawFrame = false;
@@ -554,7 +556,7 @@ public class NodeWindowEx : EditorWindow
 			//绘制提示线
 			if (enHint)
 			{
-				hintStartPos = Vector2.zero;					
+				hintStartPos = Vector2.zero;
 				hintEndPos = Vector2.zero;
 				List<NodeSocketRectEx> allSockets = new List<NodeSocketRectEx>();
 				foreach (var item in nodeRects)
@@ -564,7 +566,7 @@ public class NodeWindowEx : EditorWindow
 						if (tempOut != null && tempIn == null)//先点输入
 						{
 							if (item2.socket.GetType() == typeof(NodeOutput))
-							{ 
+							{
 								allSockets.Add(item2);
 							}
 						}
@@ -598,11 +600,11 @@ public class NodeWindowEx : EditorWindow
 						hintEndPos = allSockets[0].connectPoint;
 						hintIn = tempIn;
 						hintOut = allSockets[0];
-					}					
+					}
 				}
-			}			
+			}
 			Repaint();
-		}		
+		}
 		//如果鼠标松开时
 		if (e.type == EventType.MouseUp && e.button == 0)
 		{
@@ -647,28 +649,28 @@ public class NodeWindowEx : EditorWindow
 			DoConnect();
 			dragStartPos = dragEndPos = Vector2.zero;
 			isDragging = false;
-		}		
+		}
 		//统一移动
 		if (e.type == EventType.MouseDown && e.button == 0)
 		{
 			bool flag = false;
-            foreach (var item in selectedNodes)
-            {
+			foreach (var item in selectedNodes)
+			{
 				if (item.HitTest2(e.mousePosition))
-				{ 
+				{
 					flag = true;
 					break;
 				}
-            }
+			}
 			if (flag)
-			{ 
+			{
 				isSelectionsMoving = true;
 				selectionDelta.Clear();
 				Vector2 mousePos = e.mousePosition;
 				foreach (var item in selectedNodes)
-                {
+				{
 					selectionDelta.Add(item.nodePos - mousePos);
-                }
+				}
 				e.Use();
 			}
 		}
@@ -676,7 +678,7 @@ public class NodeWindowEx : EditorWindow
 		{
 			Vector2 mousePos = e.mousePosition;
 			for (int i = 0; i < selectedNodes.Count; i++)
-            {
+			{
 				selectedNodes[i].nodePos = selectionDelta[i] + mousePos;
 				selectedNodes[i].UpdateLayout();
 			}
@@ -740,7 +742,7 @@ public class NodeWindowEx : EditorWindow
 						NodeSocketRectEx nodeSocketRect2;
 						if (sockets2Rect.TryGetValue(nodeInput.GetConnectedOutput(), out nodeSocketRect2))//获取与该输入端相连的输出端的接口
 						{
-							if(selectedNodes.Contains(nodeSocketRect2.nodeRect)) 
+							if (selectedNodes.Contains(nodeSocketRect2.nodeRect))
 								DrawCurve(nodeSocketRect2.connectPoint, nodeSocketRect.connectPoint, lineHighlightColor);//画高亮线
 							else
 								DrawCurve(nodeSocketRect2.connectPoint, nodeSocketRect.connectPoint, lineColor);//画普通线
@@ -826,9 +828,9 @@ public class NodeWindowEx : EditorWindow
 		if (tempIn != null && tempOut != null)//线段左右端就绪
 		{
 			Undo.RecordObjects(new UnityEngine.Object[]{
-				(tempIn.socket as NodeOutput).node,
-				(tempOut.socket as NodeInput).node
-			}, "Connect");
+			(tempIn.socket as NodeOutput).node,
+			(tempOut.socket as NodeInput).node
+		}, "Connect");
 			(tempOut.socket as NodeInput).Connect(tempIn.socket as NodeOutput);//连接
 			tempIn = tempOut = null;
 		}
@@ -846,7 +848,7 @@ public class NodeWindowEx : EditorWindow
 			float up = 33;//上下非节点图区域边距（滚动条+标签）
 			float left = 49 + 15;//左右非节点图区域边距（按钮栏+滚动条）
 			Vector2 p = new Vector2(position.width - 20 - w, position.height - 38 - h);//小地图左上角点
-																					   //画背景
+																						//画背景
 			EditorGUI.DrawRect(new Rect(p - Vector2.one, new Vector2(w + 2, 1)), Color.black);
 			EditorGUI.DrawRect(new Rect(p - Vector2.one, new Vector2(1, h + 2)), Color.black);
 			EditorGUI.DrawRect(new Rect(p - new Vector2(1, -h), new Vector2(w + 2, 1)), Color.black);
@@ -1063,13 +1065,15 @@ public class NodeWindowEx : EditorWindow
 	/// 读取配置
 	/// </summary>
 	void DoRead()
-	{     
+	{
 		NodeWindowSettings nws = AssetDatabase.LoadAssetAtPath<NodeWindowSettings>("Assets/NodeWindowExConfig.asset");
 		if (nws == null)
 		{
 			nws = CreateInstance<NodeWindowSettings>();
 			nws.InitColor();
 			AssetDatabase.CreateAsset(nws, "Assets/NodeWindowExConfig.asset");
+			EditorUtility.SetDirty(nws);
+			AssetDatabase.SaveAssets();
 		}
 		width = nws.width;
 		height = nws.height;
@@ -1092,8 +1096,8 @@ public class NodeWindowEx : EditorWindow
 		k_refresh = nws.k_refresh;
 		k_snap = nws.k_snap;
 		isCloseOnLostFocus = nws.isCloseOnLostFocus;
-		addLocation = nws.addLocation;
-		addNetLocation = nws.addNetLocation;
+		addLocation = (NodeAddLocation)nws.addLocation;
+		addNetLocation = (NodeAddLocation)nws.addNetLocation;
 	}
 
 	/// <summary>
@@ -1315,8 +1319,8 @@ public class NodeWindowEx : EditorWindow
 	public static NodeAddLocation addNetLocation = NodeAddLocation.OnRoot;
 	public enum NodeAddLocation
 	{
-		OnRoot,
-		OnSelection
+		OnRoot = 1,
+		OnSelection = 2
 	}
 }
 
@@ -1502,35 +1506,35 @@ public class NodeRectEx
 		}
 		GUI.DragWindow();
 	}
-    /// <summary>
-    /// 判断选中的接口框
-    /// </summary>
-    /// <param name="pos">鼠标位置</param>
-    /// <returns>选中的接口框</returns>
-    public NodeSocketRectEx HitTest(Vector2 pos)
-    {
-        pos.x -= thisRect.x;
-        pos.y -= thisRect.y;
-        for (int i = 0; i < sockets.Count; i++)
-        {
-            if (sockets[i].HitTest(pos))
-            {
-                return sockets[i];
-            }
-        }
-        return null;
-    }
-    /// <summary>
-    /// 判断是否命中自己
-    /// </summary>	
-    public bool HitTest2(Vector2 pos)
-    {
-        return thisRect.Contains(pos);
-    }
-    /// <summary>
-    /// 节点框类型
-    /// </summary>
-    public NodeRectType nodeType
+	/// <summary>
+	/// 判断选中的接口框
+	/// </summary>
+	/// <param name="pos">鼠标位置</param>
+	/// <returns>选中的接口框</returns>
+	public NodeSocketRectEx HitTest(Vector2 pos)
+	{
+		pos.x -= thisRect.x;
+		pos.y -= thisRect.y;
+		for (int i = 0; i < sockets.Count; i++)
+		{
+			if (sockets[i].HitTest(pos))
+			{
+				return sockets[i];
+			}
+		}
+		return null;
+	}
+	/// <summary>
+	/// 判断是否命中自己
+	/// </summary>	
+	public bool HitTest2(Vector2 pos)
+	{
+		return thisRect.Contains(pos);
+	}
+	/// <summary>
+	/// 节点框类型
+	/// </summary>
+	public NodeRectType nodeType
 	{
 		get;
 		set;
@@ -1737,30 +1741,30 @@ public class NodePropertyWindow : EditorWindow
 	{
 		NodePropertyWindow win = (NodePropertyWindow)EditorWindow.GetWindow(typeof(NodePropertyWindow));
 		if (NodeWindowEx.isCloseOnLostFocus)
-		{ 
+		{
 			win.titleContent = new GUIContent() { text = nodeRect.node.Title };
 			win.position = new Rect(winEx.position.position + nodeRect.nodePos + new Vector2(50, 30) - new Vector2(330, 0), win.position.size);
-		}			
+		}
 		else
 			win.titleContent = new GUIContent() { text = "节点属性" };
 		win.minSize = new Vector2(300, 400);
 		if (NodeWindowEx.isCloseOnLostFocus)//如果是窗口模式
 		{
 			nodeButtonRects.Clear();
-			nodeRects.Clear();		
+			nodeRects.Clear();
 			if (NodeWindowEx.selectedNodes.Contains(nodeRect))//如果进入时点击的是选中的节点
 			{
 				isSame = true;
-                foreach (var item in NodeWindowEx.selectedNodes)//检测全选中的是不是同一类节点
-                {
+				foreach (var item in NodeWindowEx.selectedNodes)//检测全选中的是不是同一类节点
+				{
 					if (item.node.GetType() != NodeWindowEx.selectedNodes[0].node.GetType())
 					{
 						isSame = false; break;
 					}
-                }
+				}
 				nodeButtonRects.AddRange(NodeWindowEx.selectedNodes);
 				if (isSame)//是同一类
-				{				
+				{
 					nodeRects.AddRange(NodeWindowEx.selectedNodes);//打开全部选中节点属性
 				}
 			}
@@ -1771,20 +1775,20 @@ public class NodePropertyWindow : EditorWindow
 				isSame = true;
 			}
 			if (nodeRects.Count > 0)
-			{ 
+			{
 				List<UnityEngine.Object> objs = new List<UnityEngine.Object>();
 				foreach (var item in nodeRects)
 				{
 					objs.Add(item.node);
 				}
 				nodeEditor = new SerializedObject(objs.ToArray());
-			}			
+			}
 		}
 		else//如果是面板模式
 		{
 			win.Update();
 		}
-    }
+	}
 	void Update()
 	{
 		isSame = true;
@@ -1794,13 +1798,13 @@ public class NodePropertyWindow : EditorWindow
 			{
 				nodeButtonRects.Clear();
 				nodeRects.Clear();
-                foreach (var item in NodeWindowEx.selectedNodes)//检测全选中的是不是同一类节点
-                {
-                    if (item.node.GetType() != NodeWindowEx.selectedNodes[0].node.GetType())
-                    {
+				foreach (var item in NodeWindowEx.selectedNodes)//检测全选中的是不是同一类节点
+				{
+					if (item.node.GetType() != NodeWindowEx.selectedNodes[0].node.GetType())
+					{
 						isSame = false; break;
-                    }
-                }
+					}
+				}
 				nodeButtonRects.AddRange(NodeWindowEx.selectedNodes);
 				if (isSame)//是同一类
 				{
@@ -1829,7 +1833,7 @@ public class NodePropertyWindow : EditorWindow
 			Close();
 	}
 	void OnGUI()
-    {	
+	{
 		GUILayout.Space(10);
 		using (new EditorGUI.DisabledScope(nodeButtonRects.Count <= 0))
 		{
@@ -1907,9 +1911,9 @@ public class NodePropertyWindow : EditorWindow
 			titleContent = new GUIContent() { text = "多种节点" };
 			GUILayout.Space(10);
 			GUILayout.Label("多节点属性编辑仅支持同种类型节点");
-		}				
+		}
 	}
-	
+
 	/// <summary>
 	/// 序列化对象
 	/// </summary>
@@ -1927,53 +1931,6 @@ public class NodePropertyWindow : EditorWindow
 	/// </summary>
 	public static bool isSame;
 	Vector2 scrollPos;
-}
-
-/// <summary>
-/// 配置文件
-/// </summary>
-public class NodeWindowSettings : ScriptableObject
-{
-	[Range(1650, 10000)]
-	public float width = 3200;
-	[Range(1100, 10000)]
-	public float height = 2400;
-	[Range(16, 256)]
-	public float gridX = 32;
-	[Range(16, 256)]
-	public float gridY = 32;
-	public Color gridBgColor = new Color(0.75f, 0.75f, 0.75f);
-	public Color gridLineColor = new Color(0.65f, 0.65f, 0.65f);
-	public Color lineColor = new Color(0.7f, 0.7f, 1f);
-	public Color lineHighlightColor = new Color(1f, 0.5f, 0);
-	public Color connectingColor = Color.white;
-	public bool enHint = true;
-	public Color lineHintColor = new Color(0.4f, 0.4f, 0.4f, 0.5f);
-	public Color nodeGraphColor = new Color(1f, 0.9f, 0.7f);
-	public Color nodeGraphIOColor = new Color(1f, 0.7f, 0.7f);
-	public Color nodeCommentColor = Color.green;
-	public Color nodeHighlightColor = new Color(1f, 0.5f, 0.3f, 0.5f);
-	public float minCircleValue = 0.4999f;
-	public float maxCircleValue = 0.5f;
-	public Gradient circleColor = new Gradient();
-	public KeyCode k_refresh = KeyCode.R;
-	public KeyCode k_snap = KeyCode.Q;
-	public bool isCloseOnLostFocus = true;
-	public NodeWindowEx.NodeAddLocation addLocation = NodeWindowEx.NodeAddLocation.OnRoot;
-	public NodeWindowEx.NodeAddLocation addNetLocation = NodeWindowEx.NodeAddLocation.OnRoot;
-
-	public void InitColor()
-	{
-		GradientColorKey[] colorKey = new GradientColorKey[2];
-		colorKey[0].color = Color.white;
-		colorKey[0].time = 0.0f;
-		colorKey[1].color = Color.green;
-		colorKey[1].time = 1.0f;
-		GradientAlphaKey[] alphaKey = new GradientAlphaKey[1];
-		alphaKey[0].alpha = 1.0f;
-		alphaKey[0].time = 1f;
-		circleColor.SetKeys(colorKey, alphaKey);
-	}
 }
 
 /// <summary>
@@ -2231,6 +2188,8 @@ public class ConfWindow : EditorWindow
 		{
 			nws = CreateInstance<NodeWindowSettings>();
 			AssetDatabase.CreateAsset(nws, "Assets/NodeWindowExConfig.asset");
+			EditorUtility.SetDirty(nws);
+			AssetDatabase.SaveAssets();
 		}
 		nws.width = width;
 		nws.height = height;
@@ -2253,8 +2212,10 @@ public class ConfWindow : EditorWindow
 		nws.k_refresh = k_refresh;
 		nws.k_snap = k_snap;
 		nws.isCloseOnLostFocus = isCloseOnLostFocus;
-		nws.addLocation = addLocation;
-		nws.addNetLocation = addNetLocation;
+		nws.addLocation = (NodeWindowSettings.NodeAddLocation)addLocation;
+		nws.addNetLocation = (NodeWindowSettings.NodeAddLocation)addNetLocation;
+		EditorUtility.SetDirty(nws);
+		AssetDatabase.SaveAssets();
 	}
 	/// <summary>
 	/// Asset -> this
@@ -2267,6 +2228,8 @@ public class ConfWindow : EditorWindow
 			nws = CreateInstance<NodeWindowSettings>();
 			nws.InitColor();
 			AssetDatabase.CreateAsset(nws, "Assets/NodeWindowExConfig.asset");
+			EditorUtility.SetDirty(nws);
+			AssetDatabase.SaveAssets();
 		}
 		width = nws.width;
 		height = nws.height;
@@ -2289,13 +2252,13 @@ public class ConfWindow : EditorWindow
 		k_refresh = nws.k_refresh;
 		k_snap = nws.k_snap;
 		isCloseOnLostFocus = nws.isCloseOnLostFocus;
-		addLocation = nws.addLocation;
-		addNetLocation = nws.addNetLocation;
+		addLocation = (NodeWindowEx.NodeAddLocation)nws.addLocation;
+		addNetLocation = (NodeWindowEx.NodeAddLocation)nws.addNetLocation;
 
 		switch (addLocation)
 		{
-			case NodeWindowEx.NodeAddLocation.OnRoot:text = "节点图"; break;
-			case NodeWindowEx.NodeAddLocation.OnSelection:text = "选中的物体"; break;
+			case NodeWindowEx.NodeAddLocation.OnRoot: text = "节点图"; break;
+			case NodeWindowEx.NodeAddLocation.OnSelection: text = "选中的物体"; break;
 		}
 		switch (addNetLocation)
 		{
@@ -2334,7 +2297,7 @@ public class ConfWindow : EditorWindow
 		addNetLocation = NodeWindowEx.NodeAddLocation.OnRoot;
 
 		text = "节点图";
-		text2 = "节点图";	
+		text2 = "节点图";
 	}
 	void ShowMenu(int type)
 	{
