@@ -2272,7 +2272,7 @@ public class ConfWindow : EditorWindow
 				}
 			}
 		}
-		EditorGUI.LabelField(new Rect(0, position.height - 16, 200, 16), "V20220630 ©SHIROTECH", new GUIStyle() { normal = new GUIStyleState() { textColor = new Color(0.5f, 0.5f, 0.5f) } });
+		EditorGUI.LabelField(new Rect(0, position.height - 16, 200, 16), "V20220705 ©SHIROTECH", new GUIStyle() { normal = new GUIStyleState() { textColor = new Color(0.5f, 0.5f, 0.5f) } });
 	}
 	void DrawNodes()
 	{
