@@ -730,7 +730,7 @@ public class NodeWindowEx : EditorWindow
 					float m2 = (y.connectPoint - mousePos).magnitude;
 					return m1.CompareTo(m2);
 				});
-				if ((allSockets[0].connectPoint - mousePos).magnitude < 50)
+				if (allSockets.Count != 0 && (allSockets[0].connectPoint - mousePos).magnitude < 50)
 				{
 					if (tempOut != null && tempIn == null)//先点输入
 					{
@@ -1927,7 +1927,7 @@ public class NodePropertyWindow : EditorWindow
 		if (NodeWindowEx.isCloseOnLostFocus)
 		{
 			win.titleContent = new GUIContent() { text = nodeRect.node.Title };
-			win.position = new Rect(winEx.position.position + nodeRect.nodePos + new Vector2(50, 30) - new Vector2(330, 0), win.position.size);
+			win.position = new Rect(winEx.position.position + nodeRect.nodePos + new Vector2(50, 30) + new Vector2(180, 0), win.position.size);
 		}
 		else
 			win.titleContent = new GUIContent() { text = "节点属性" };
