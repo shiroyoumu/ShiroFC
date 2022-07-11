@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Shiro基础类库")]
 [assembly: AssemblyDescription("仅在做图时使用的C#类库")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Shiro Tech")]
+[assembly: AssemblyCompany("ShiroTech")]
 [assembly: AssemblyProduct("ShiroFC")]
 [assembly: AssemblyCopyright("shiroyoumu")]
 [assembly: AssemblyTrademark("")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 //可以指定所有这些值，也可以使用“生成号”和“修订号”的默认值
 //通过使用 "*"，如下所示:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.7.0.0")]
-[assembly: AssemblyFileVersion("1.7.0.0")]
+[assembly: AssemblyVersion("2.0.0.0")]
+[assembly: AssemblyFileVersion("2.0.0.0")]
