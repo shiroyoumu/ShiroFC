@@ -19,16 +19,18 @@ namespace EditorFC
             dhWindow.titleContent = new GUIContent("自动保存");
             dhWindow.Show();
         }
-
+        void OnEnable()
+        {
+            saveHour = curHour;
+            saveMin = curMin;
+        }
         void OnGUI()
         {
-
             isAutoSave = EditorGUILayout.BeginToggleGroup("自动保存", isAutoSave);
             intervalTime = EditorGUILayout.IntSlider("自动保存间隔（分钟）", intervalTime, 1, 30);
             GUILayout.Label(String.Format("上次保存时间：{0}:{1}", saveHour, saveMin), EditorStyles.boldLabel);
             EditorGUILayout.EndToggleGroup();
         }
-
         void Update()
         {
             if (isAutoSave && !EditorApplication.isPlaying)
@@ -36,24 +38,28 @@ namespace EditorFC
                 curMin = DateTime.Now.Minute;
                 curHour = DateTime.Now.Hour;
                 if (curMin >= (saveMin + intervalTime))
+                {
                     DoSave();
+                    Repaint();
+                }
                 else if (curHour > saveHour && (curMin + 60) >= (saveMin + intervalTime))
+                { 
                     DoSave();
+                    Repaint();
+                }
             }
         }
-
         private void DoSave()
         {
             EditorSceneManager.SaveOpenScenes();
             saveHour = curHour;
             saveMin = curMin;
         }
-        /// 自动保存
         public bool isAutoSave = true;
-        private int curMin;
-        private int curHour;
-        private static int saveMin;
-        private static int saveHour;
+        int curMin;
+        int curHour;
+        static int saveMin;
+        static int saveHour;
         public int intervalTime = 3;
     }
 }

@@ -1302,7 +1302,7 @@ public class NodeWindowEx : EditorWindow
 	/// <summary>
 	/// 滚动条位置
 	/// </summary>
-	Vector2 scrollPos;
+	public static Vector2 scrollPos;
 	/// <summary>
 	/// 框选起始位置
 	/// </summary>
@@ -1927,7 +1927,7 @@ public class NodePropertyWindow : EditorWindow
 		if (NodeWindowEx.isCloseOnLostFocus)
 		{
 			win.titleContent = new GUIContent() { text = nodeRect.node.Title };
-			win.position = new Rect(winEx.position.position + nodeRect.nodePos + new Vector2(50, 30) + new Vector2(180, 0), win.position.size);
+			win.position = new Rect(winEx.position.position + nodeRect.nodePos + new Vector2(50, 30) + new Vector2(180, 0) - NodeWindowEx.scrollPos, win.position.size);
 		}
 		else
 			win.titleContent = new GUIContent() { text = "节点属性" };

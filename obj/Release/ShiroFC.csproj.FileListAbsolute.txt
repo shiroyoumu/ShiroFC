@@ -3,3 +3,4 @@ Z:\1人类相关\1.dll\ShiroFC\bin\Release\ShiroFC.pdb
 Z:\1人类相关\1.dll\ShiroFC\obj\Release\ShiroFC.csproj.CoreCompileInputs.cache
 Z:\1人类相关\1.dll\ShiroFC\obj\Release\ShiroFC.dll
 Z:\1人类相关\1.dll\ShiroFC\obj\Release\ShiroFC.pdb
+Z:\1人类相关\1.dll\ShiroFC\obj\Release\ShiroFC.csproj.AssemblyReference.cache

@@ -184,5 +184,16 @@ namespace EditorFC
                 go.transform.position = new Vector3(x, y, z);
             }
         }
+        [MenuItem("GameObject/Add Human Component/Set No Grab", false, 2000)]
+        public static void SetNoGrab()
+        {
+            GameObject go = Selection.activeGameObject;
+            if (go != null)
+            {
+                go.AddComponent<TargetHelper>();
+                go.tag = "NoGrab";
+                Debug.Log("\"" + Selection.activeGameObject.name + "\" set no grab done!");
+            }
+        }
     }
 }

@@ -10,7 +10,7 @@ using System.Reflection;
 namespace DebugHelper
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("ShiroFC/Debug Helper 20220526")]
+    [AddComponentMenu("ShiroFC/Debug Helper 20220729")]
     public class DH : MonoBehaviour
     {
         void Start()
