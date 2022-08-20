@@ -135,13 +135,14 @@ public class NodeWindowEx : EditorWindow
 			DrawLine(new Rect(46, 0, 2, position.height), new Color(0.25f, 0.25f, 0.25f));
 			DrawLine(new Rect(48, 0, 1, position.height), Color.white);
 			GUILayout.BeginArea(new Rect(50, 0, position.width - 50, position.height));
+			HandleMiniMapShield();
 			using (new GUILayout.VerticalScope())
 			{
 				using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPos, true, true))
 				{
 					scrollPos = scrollView.scrollPosition;
 					GUILayout.Label("", GUILayout.Width(width), GUILayout.Height(height));//占位符
-																							//主区域 (
+					//主区域 (
 					DrawGrids(gridX, gridY, gridBgColor, gridLineColor);
 					HandleEvents();
 					ShowNodeProperty();
@@ -980,6 +981,29 @@ public class NodeWindowEx : EditorWindow
 			tempIn = tempOut = null;
 		}
 	}
+	Rect area;
+	Vector2 mPos;
+	/// <summary>
+	/// 屏蔽小地图区域点击
+	/// </summary>
+	void HandleMiniMapShield() 
+	{
+		Event e = Event.current;
+		if (e.type == EventType.MouseDown && (e.button == 0 || e.button == 1) && isMap)
+		{ 
+			mPos = e.mousePosition + new Vector2(50, 0);
+			float zoom = Mathf.Max(width / 250, height / 250);//小地图缩小倍率
+			float w = width / zoom;//小地图长
+			float h = height / zoom;//小地图宽
+			Vector2 p = new Vector2(position.width - 20 - w, position.height - 38 - h);//小地图左上角点
+			area = new Rect(p, new Vector2(w, h));
+			if (area.Contains(mPos))
+			{
+				e.Use();
+				e.button = 999;
+			}			
+		}
+	}
 	/// <summary>
 	/// 绘制小地图
 	/// </summary>
@@ -993,7 +1017,7 @@ public class NodeWindowEx : EditorWindow
 			float up = 33;//上下非节点图区域边距（滚动条+标签）
 			float left = 49 + 15;//左右非节点图区域边距（按钮栏+滚动条）
 			Vector2 p = new Vector2(position.width - 20 - w, position.height - 38 - h);//小地图左上角点
-																						//画背景
+			//画背景
 			EditorGUI.DrawRect(new Rect(p - Vector2.one, new Vector2(w + 2, 1)), Color.black);
 			EditorGUI.DrawRect(new Rect(p - Vector2.one, new Vector2(1, h + 2)), Color.black);
 			EditorGUI.DrawRect(new Rect(p - new Vector2(1, -h), new Vector2(w + 2, 1)), Color.black);
@@ -1029,12 +1053,9 @@ public class NodeWindowEx : EditorWindow
 				}
 			}
 			Event e = Event.current;
-			if (e.type == EventType.MouseDown && e.button == 0)
+			if (e.button == 999)
 			{
-				if (new Rect(p, new Vector2(w, h)).Contains(e.mousePosition))
-				{
-					isMapDragging = true;
-				}
+				isMapDragging = true;
 			}
 			if (isMapDragging)
 			{
@@ -1042,7 +1063,7 @@ public class NodeWindowEx : EditorWindow
 				scrollPos = (e.mousePosition - p - new Vector2((position.width - left) / width * w, (position.height - up) / height * h) / 2) * zoom;
 				Repaint();
 			}
-			if (e.type == EventType.MouseUp && e.button == 0)
+			if (e.type == EventType.MouseUp && (e.button == 0 || e.button == 1))
 			{
 				isMapDragging = false;
 			}
