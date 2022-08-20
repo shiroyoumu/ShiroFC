@@ -1198,7 +1198,7 @@ public class NodeWindowEx : EditorWindow
 					case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
 					case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
 				}
-				((Node)Undo.AddComponent(tar, (Type)script)).pos = mousePos;
+				Undo.AddComponent(tar, (Type)script);
 				DoRefresh();
 			}
 			else
@@ -1208,7 +1208,7 @@ public class NodeWindowEx : EditorWindow
 					case NodeAddLocation.OnRoot: tar = activeGraph.gameObject; break;
 					case NodeAddLocation.OnSelection: tar = Selection.activeGameObject; break;
 				}
-				((Node)Undo.AddComponent(tar, (Type)script)).pos = mousePos;
+				Undo.AddComponent(tar, (Type)script);
 				DoRefresh();
 			}
 		}
@@ -1285,7 +1285,7 @@ public class NodeWindowEx : EditorWindow
 	/// <summary>
 	/// 当前图中节点框列表
 	/// </summary>
-	public List<NodeRectEx> nodeRects = new List<NodeRectEx>();
+	List<NodeRectEx> nodeRects = new List<NodeRectEx>();
 	/// <summary>
 	/// 当前图中节点列表
 	/// </summary>
@@ -2061,7 +2061,7 @@ public class NodePropertyWindow : EditorWindow
 				{
 					Node newNode = item.node;
 					UnityEditorInternal.ComponentUtility.CopyComponent(item.node);
-					newNode.pos = item.node.pos + new Vector2(0, 32*4);
+					newNode.pos = new Vector2(10, 10);
 					Undo.RecordObject(item.node.gameObject, "duplicate");
 					UnityEditorInternal.ComponentUtility.PasteComponentAsNew(newNode.gameObject);
 				}
