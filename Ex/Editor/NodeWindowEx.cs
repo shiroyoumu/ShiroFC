@@ -50,6 +50,7 @@ public class NodeWindowEx : EditorWindow
 	void OnSelectionChange()
 	{
 		isUpdateSelection = true;
+		BuildGraph(pendingGraph);
 		Repaint();
 	}
 	void Update()
